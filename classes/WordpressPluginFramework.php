@@ -28,7 +28,7 @@ abstract class WordpressPluginFramework
     private $initHook = 'init';
     private $status = true;
 
-    //abstract public static function getFile(): string;
+    abstract public static function getFile(): string;
     abstract public static function getName(): string;
     abstract public static function getSlug(): string;
 
@@ -105,11 +105,11 @@ abstract class WordpressPluginFramework
         }
     }
 
-    public static function getFile()
-    {
-        $called = get_called_class();
-        d($called, \WP_PLUGIN_DIR);
-    }
+    //public static function getFile()
+    //{
+    //    $called = get_called_class();
+    //    d($called, \WP_PLUGIN_DIR);
+    //}
 
 
     public function addShortcode(callable $function, string $shortcode = ''): self
