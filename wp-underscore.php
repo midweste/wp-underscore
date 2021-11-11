@@ -19,10 +19,6 @@ namespace _;
  * Requires PHP:      7.2
  */
 
-if (!defined('WPINC')) {
-    die;
-}
-
 define('WPUNDERSCORE', dirname(__FILE__));
 
 call_user_func(function () {
