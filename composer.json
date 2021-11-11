@@ -1,0 +1,23 @@
+{
+  "name": "midweste/wp-underscore",
+  "description": "WP Underscore Function Library is a plugin for developers that has helper libraries and additional functions.",
+  "type": "library",
+  "require": {
+    "psr/log": "^1.1",
+    "midweste/simplelogger": "^2.0",
+    "matthiasmullie/minify": "^1.3",
+    "twig/twig": "^3.0",
+    "kint-php/kint": "^3.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "_\\": "classes/"
+    },
+    "files": [
+      "wp-underscore.php"
+    ]    
+  },
+  "require-dev": {
+    "brain/monkey": "^2.0"
+  }
+}

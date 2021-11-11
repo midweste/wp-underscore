@@ -1,0 +1,97 @@
+<script type="text/x-handlebars-template" id="wp-edit-container">
+
+  <div class="wp-edit-container">
+
+      {{#if options.label}}
+      <h1 class="{{#if options.labelClass}}{{options.labelClass}}{{/if}} alpaca-container-label">{{{options.label}}}</h1>
+      {{/if}}
+
+      {{#if options.helpers}}
+          {{#compare options.helpersPosition "above"}}
+              {{#each options.helpers}}
+                  <p class="alpaca-helper {{#if options.helperClass}}{{options.helperClass}}{{/if}}">
+                      {{#showMessage .}}{{/showMessage}}
+                  </p>
+              {{/each}}
+          {{/compare}}
+      {{/if}}
+
+      {{#container}}{{/container}}
+
+      {{#if options.helpers}}
+          {{#compare options.helpersPosition "below"}}
+              {{#each options.helpers}}
+                  <p class="alpaca-helper {{#if options.helperClass}}{{options.helperClass}}{{/if}}">
+                      {{#showMessage .}}{{/showMessage}}
+                  </p>
+              {{/each}}
+          {{/compare}}
+      {{/if}}
+
+  </div>
+</script>
+
+<script type="text/x-handlebars-template" id="wp-edit-object">
+  <table class="form-table" role="presentation">
+    <tbody>
+      {{#each items}}
+        {{#item "tr"}}{{/item}}
+      {{/each}}
+    </tbody>
+  </table>
+</script>
+
+<script type="text/x-handlebars-template" id="wp-edit-object-item">
+  <tr class="wp-edit-object-item">
+    {{#itemField "td"}}{{/itemField}}
+  </tr>
+</script>
+
+<script type="text/x-handlebars-template" id="wp-edit-control">
+    <td class="wp-edit-control">
+
+      <table class="form-table">
+          <tr>
+          <th scope="row">
+        {{#if options.label}}
+              <label class="{{#if options.labelClass}}{{options.labelClass}}{{/if}} alpaca-control-label" for="{{id}}">{{{options.label}}}</label>
+        {{/if}}
+          </th>
+          <td>
+        {{#if options.helpers}}
+            {{#compare options.helpersPosition "above"}}
+                {{#each options.helpers}}
+                    <p class="description {{id}}-description {{#if options.helperClass}}{{options.helperClass}}{{/if}}">
+                        {{#showMessage .}}{{/showMessage}}
+                    </p>
+                {{/each}}
+            {{/compare}}
+        {{/if}}
+
+        {{#control}}{{/control}}
+
+        {{#if options.helpers}}
+            {{#compare options.helpersPosition "below"}}
+                {{#each options.helpers}}
+                    <p class="description {{id}}-description {{#if options.helperClass}}{{options.helperClass}}{{/if}}">
+                        {{#showMessage .}}{{/showMessage}}
+                    </p>
+                {{/each}}
+            {{/compare}}
+        {{/if}}
+
+        {{#if options.renderButtons}}
+            {{#if options.buttons}}
+            <span class="alpaca-control-buttons-container">
+                {{#each options.buttons}}
+                <button data-key="{{@key}}" type="{{type}}" class="alpaca-control-button alpaca-control-button-{{@key}} {{styles}}" {{#each value}}{{@key}}="{{value}}" {{/each}}>{{{value}}}</button>
+                {{/each}}
+            </span>
+            {{/if}}
+        {{/if}}
+        </td>
+        </tr>
+  </table>
+
+    </td>
+</script>
