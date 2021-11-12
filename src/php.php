@@ -12,7 +12,7 @@ function php_ini() {
 
     $data = [];
     foreach (array_keys($a) as $k) {
-        $ss = split("\.", $k);
+        $ss = explode("\.", $k);
         if (count($ss) == 1) {
             $sec = "PHP";
             $v = $k;
