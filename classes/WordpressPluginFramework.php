@@ -38,9 +38,11 @@ abstract class WordpressPluginFramework
             return;
         }
 
-        register_activation_hook(static::getFile(), [__CLASS__, 'activate']);
-        register_deactivation_hook(static::getFile(), [__CLASS__, 'deactivate']);
-        register_uninstall_hook(static::getFile(), [__CLASS__, 'uninstall']);
+		if (is_admin()) {
+			register_activation_hook(static::getFile(), [static::class, 'activate']);
+			register_deactivation_hook(static::getFile(), [static::class, 'deactivate']);
+			register_uninstall_hook(static::getFile(), [static::class, 'uninstall']);
+		}
 
         add_action($this->getInitHook(), function () {
             $this->init();
@@ -208,7 +210,7 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function activate()
+    public static function activate(): void
     {
         if (!current_user_can('activate_plugins')) {
             return;
@@ -223,9 +225,8 @@ abstract class WordpressPluginFramework
         wp_cache_flush();
     }
 
-    public static function onActivate()
+    public static function onActivate(): void
     {
-        return;
     }
 
     /**
@@ -248,9 +249,8 @@ abstract class WordpressPluginFramework
         wp_cache_flush();
     }
 
-    public static function onDeactivate()
+    public static function onDeactivate(): void
     {
-        return;
     }
 
     /**
@@ -258,7 +258,7 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function uninstall()
+    public static function uninstall(): void
     {
         if (!current_user_can('activate_plugins')) {
             return;
@@ -279,8 +279,7 @@ abstract class WordpressPluginFramework
         wp_cache_flush();
     }
 
-    public static function onUninstall()
+    public static function onUninstall(): void
     {
-        return;
     }
 }
