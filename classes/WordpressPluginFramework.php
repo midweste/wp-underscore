@@ -210,7 +210,7 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function activate(): void
+    public static function activate()
     {
         if (!current_user_can('activate_plugins')) {
             return;
@@ -225,7 +225,7 @@ abstract class WordpressPluginFramework
         wp_cache_flush();
     }
 
-    public static function onActivate(): void
+    public static function onActivate()
     {
     }
 
@@ -249,7 +249,7 @@ abstract class WordpressPluginFramework
         wp_cache_flush();
     }
 
-    public static function onDeactivate(): void
+    public static function onDeactivate()
     {
     }
 
@@ -258,7 +258,7 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function uninstall(): void
+    public static function uninstall()
     {
         if (!current_user_can('activate_plugins')) {
             return;
@@ -279,7 +279,7 @@ abstract class WordpressPluginFramework
         wp_cache_flush();
     }
 
-    public static function onUninstall(): void
+    public static function onUninstall()
     {
     }
 }
