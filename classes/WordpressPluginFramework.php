@@ -49,7 +49,7 @@ abstract class WordpressPluginFramework
 
     public function pluginRun()
     {
-        $this->init();
+        $this->pluginInit();
         if (\is_admin()) {
             $this->pluginInitAdmin();
         }
@@ -74,7 +74,7 @@ abstract class WordpressPluginFramework
     /**
      * Runs when the plugin is initialized
      */
-    protected function init()
+    protected function pluginInit()
     {
     }
 
