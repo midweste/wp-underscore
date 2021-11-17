@@ -7,11 +7,15 @@ defined('ABSPATH') || exit;
 abstract class WordpressPluginFrameworkAdmin extends WordpressPluginFramework
 {
 
-    private $defaults = [];
-
-    public function alpacaAdminForm(string $path)
+    public function alpacaAdminForm(string $path, array $defaults = [])
     {
+        // json schema definition
+        $definition = file_get_contents($path);
+        if (empty($definition)) {
+            throw new \Exception(sprintf('Could not find json schema definition at %s', $path));
+        }
 
+        // nonce
         $nonce = wp_create_nonce(static::getSlug());
         if (isset($_POST['wpnonce'])) {
             if (wp_verify_nonce($_POST['wpnonce'], static::getSlug()) && $this->save($_POST)) {
@@ -21,27 +25,23 @@ abstract class WordpressPluginFrameworkAdmin extends WordpressPluginFramework
             }
         }
 
-        $definition = file_get_contents($path);
-        if (empty($definition)) {
-            return;
-        }
+        // alpaca js and css
+        enqueue('alpaca-lodash', '//cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js');
+        enqueue('handlebars-script', '//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js');
+        enqueue('basealpaca-style', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css');
+        enqueue('basealpaca-script', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.js', ['jquery']);
 
-        $this->enqueueExternalFile('alpaca-lodash', '//cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js');
-        // Styles
-        //$this->enqueueExternalFile('bootstrap-style', '//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css');
-        //$this->enqueueExternalFile('bootstrap-script', '//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js', ['jquery']);
-
-        // Alpaca
-        $this->enqueueExternalFile('handlebars-script', '//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js');
-        $this->enqueueExternalFile('basealpaca-style', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css');
-        $this->enqueueExternalFile('basealpaca-script', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.js', ['jquery']);
-
+        // form setup
         $id = static::getSlug() . '-' .  hash('md5', $definition);
-        $data = json_encode((object)$this->getData());
+        $merged = array_replace_recursive((array) $defaults, (array) $this->getOptions());
+        $data = json_encode((object) $merged);
         $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
         $templates = file_get_contents(__DIR__ . '/WordpressPluginFrameworkAdmin.html');
 
+        // html
         $loader = <<<HTML
+
+            {$templates}
 
             <style>
                 #wp-plugin-admin .alpaca-message {
@@ -61,21 +61,14 @@ abstract class WordpressPluginFrameworkAdmin extends WordpressPluginFramework
                 #wp-plugin-admin .alpaca-form-buttons-container {
                     text-align: left !important;
                 }
-
             </style>
 
             <div id="wp-plugin-admin">
                 <div id="{$id}" class="alpaca-form wrap"></div>
             </div>
 
-            {$templates}
-
             <script type="text/javascript">
-                $ = (typeof $ == "undefined" && typeof jQuery !== "undefined") ? jQuery : $;
-                console = (typeof console == "undefined") ? {} : console;
-                console.log = (typeof console.log != "function") ? function () { } : console.log;
-
-                $(document).ready(function($) {
+                jQuery(document).ready(function() {
                     // json form definition
                     {$definition}
 
@@ -111,37 +104,16 @@ abstract class WordpressPluginFrameworkAdmin extends WordpressPluginFramework
                         }
                     });
                     _.set(jsonSchema, 'view.parent', "wp-edit");
-                    //_.set(jsonSchema, 'options.type', "table")
-                    // _.set(jsonSchema, 'view.templates', {
-                    //     "control": "template"
-                    // })
-                    //_.set(jsonSchema, 'view.templates.message', "<span>{{{message}}}</span>");
 
                     // set default data
                     _.set(jsonSchema, 'data', $data);
 
                     // init
-                    $('#{$id}').alpaca(jsonSchema);
+                    jQuery('#{$id}').alpaca(jsonSchema);
                 });
             </script>
         HTML;
         return $loader;
-    }
-
-    public function getData(): array
-    {
-        return array_replace_recursive((array) $this->getDefaults(), (array) $this->getOption());
-    }
-
-    public function getDefaults(): array
-    {
-        return $this->defaults;
-    }
-
-    public function setDefaults(array $defaults): self
-    {
-        $this->defaults = $defaults;
-        return $this;
     }
 
     protected function save(array $data): bool

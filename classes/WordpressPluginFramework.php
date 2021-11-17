@@ -24,76 +24,75 @@ define('WPPLUGIN_DIR', __DIR__);
 
 abstract class WordpressPluginFramework
 {
+    protected static $pluginFile;
+    protected static $pluginName;
+    protected static $pluginSlug;
 
-    private $initHook = 'init';
-    private $status = true;
+    // abstract public static function getFile(): string;
+    // abstract public static function getName(): string;
+    // abstract public static function getSlug(): string;
 
-    abstract public static function getFile(): string;
-    abstract public static function getName(): string;
-    abstract public static function getSlug(): string;
-
-    public function __construct()
+    public function __construct(string $name, string $slug, string $file)
     {
-        if ($this->getStatus() === false) {
-            return;
+        static::$pluginName = $name;
+        static::$pluginSlug = $slug;
+        static::$pluginFile = $file;
+
+        load_plugin_textdomain(static::getSlug(), false, dirname(plugin_basename(static::getFile())) . '/lang');
+
+        if (is_admin()) {
+            register_activation_hook(static::getFile(), [static::class, 'activate']);
+            register_deactivation_hook(static::getFile(), [static::class, 'deactivate']);
+            register_uninstall_hook(static::getFile(), [static::class, 'uninstall']);
         }
-
-		if (is_admin()) {
-			register_activation_hook(static::getFile(), [static::class, 'activate']);
-			register_deactivation_hook(static::getFile(), [static::class, 'deactivate']);
-			register_uninstall_hook(static::getFile(), [static::class, 'uninstall']);
-		}
-
-        add_action($this->getInitHook(), function () {
-            $this->init();
-        });
     }
+
+    public function run()
+    {
+        $this->init();
+        if (is_admin()) {
+            $this->initAdmin();
+        }
+    }
+
+    public static function getSlug()
+    {
+        return static::$pluginSlug;
+    }
+
+    public static function getName()
+    {
+        return static::$pluginName;
+    }
+
+    public static function getFile()
+    {
+        return static::$pluginFile;
+    }
+
 
     /**
      * Runs when the plugin is initialized
      */
-    protected function init(): void
+    protected function init()
     {
-        // Setup localization
-        load_plugin_textdomain(static::getSlug(), false, dirname(plugin_basename(static::getFile())) . '/lang');
-
-        if (is_admin()) {
-            //this will run when in the WordPress admin
-        } else {
-            //this will run when on the frontend
-        }
     }
 
-    public function getInitHook(): string
+    /**
+     * Runs when the plugin is initialized on admin pages
+     */
+    protected function initAdmin()
     {
-        return $this->initHook;
     }
 
-    public function setInitHook(string $hook): self
-    {
-        $this->initHook = $hook;
-        return $this;
-    }
-
-    public function getStatus(): bool
-    {
-        return $this->status;
-    }
-
-    public function setStatus(bool $status): self
-    {
-        $this->status = $status;
-        return $this;
-    }
-
-    public function getOption(): ?array
+    public function getOptions(): ?array
     {
         return get_option(static::getSlug(), null);
     }
 
     public function setOption(array $data): bool
     {
-        $current = $this->getOption();
+        $current = $this->getOptions();
         if (!is_null($current)) {
             if ($current === $data) {
                 // have to compare existing value to what is going to be saved
@@ -106,13 +105,6 @@ abstract class WordpressPluginFramework
             return add_option(static::getSlug(), $data);
         }
     }
-
-    //public static function getFile()
-    //{
-    //    $called = get_called_class();
-    //    d($called, \WP_PLUGIN_DIR);
-    //}
-
 
     public function addShortcode(callable $function, string $shortcode = ''): self
     {
@@ -140,70 +132,32 @@ abstract class WordpressPluginFramework
         });
     }
 
-
-    /**
-     * Helper function for registering and enqueueing scripts and styles.
-     *
-     * @name			The ID to register with WordPress
-     * @file_path		The path to the actual file
-     * @is_script		Optional argument for if the incoming file_path is a JavaScript source file.
-     */
-    protected function enqueueFile(string $handle, string $file_path, array $depends = []): void
+    private function enqueueAdd($hook, string $handle, string $file_path, array $depends = [], bool $inline = false, bool $script = false): self
     {
-        $pathinfo = pathinfo($file_path);
-        $is_script = (isset($pathinfo['extension']) && $pathinfo['extension'] == 'js') ? true : false;
-
-        $url = plugins_url($file_path, static::getFile());
-        $file = plugin_dir_path(static::getFile()) . $file_path;
-
-        if (!file_exists($file)) {
-            return;
-        }
-
-        if ($is_script) {
-            wp_register_script($handle, $url, $depends); //depends on jquery
-            wp_enqueue_script($handle);
-        } else {
-            wp_register_style($handle, $url);
-            wp_enqueue_style($handle);
-        }
+        add_action($hook, function () use ($hook, $handle, $file_path, $depends) {
+            if (\is_callable($hook) && !$hook()) {
+                return;
+            }
+            \_\enqueue($handle, $file_path, $depends);
+        });
+        return $this;
     }
 
-    /**
-     * Helper function for registering and enqueueing scripts and styles.
-     *
-     * @name	The 	ID to register with WordPress
-     * @file_path		The path to the actual file
-     * @is_script		Optional argument for if the incoming file_path is a JavaScript source file.
-     */
-    protected function enqueueExternalFile($handle, $file_path, array $depends = []): void
+    protected function enqueue(string $handle, string $file_path, array $depends = []): self
     {
-        $pathinfo = pathinfo($file_path);
-        $is_script = (isset($pathinfo['extension']) && $pathinfo['extension'] == 'js') ? true : false;
-
-        $handle = sprintf('%s-%s', static::getSlug(), $handle);
-        if ($is_script) {
-            wp_register_script($handle, $file_path, $depends);
-            wp_enqueue_script($handle);
-        } else {
-            wp_register_style($handle, $file_path);
-            wp_enqueue_style($handle);
-        }
+        return $this->enqueueAdd('wp_enqueue_scripts', $handle, $file_path, $depends);
     }
 
-    protected function enqueueInline(string $handle, string $content, bool $script = false)
+    protected function enqueueAdmin(string $handle, string $file_path, array $depends = []): self
     {
-        $handle = sprintf('%s-%s', static::getSlug(), $handle);
-        if ($script) {
-            wp_register_script($handle, false);
-            wp_enqueue_script($handle);
-            wp_add_inline_script($handle, $content);
-        } else {
-            wp_register_style($handle, false);
-            wp_enqueue_style($handle);
-            wp_add_inline_style($handle, $content);
-        }
+        return $this->enqueueAdd('wp_enqueue_scripts', $handle, $file_path, $depends);
     }
+
+    protected function enqueueConditionally(string $handle, string $file_path, array $depends = [], callable $callback): self
+    {
+        return $this->enqueueAdd($callback, $handle, $file_path, $depends);
+    }
+
 
     /**
      * https://wordpress.stackexchange.com/questions/25910/uninstall-activate-deactivate-a-plugin-typical-features-how-to/25979#25979
@@ -281,5 +235,140 @@ abstract class WordpressPluginFramework
 
     public static function onUninstall()
     {
+    }
+
+    public function alpacaAdminForm(string $path, array $defaults = [])
+    {
+        // json schema definition
+        $definition = file_get_contents($path);
+        if (empty($definition)) {
+            throw new \Exception(sprintf('Could not find json schema definition at %s', $path));
+        }
+
+        // nonce
+        $nonce = wp_create_nonce(static::getSlug());
+        if (isset($_POST['wpnonce'])) {
+            if (wp_verify_nonce($_POST['wpnonce'], static::getSlug()) && $this->save($_POST)) {
+                echo $this->createNotice('Settings were saved', 'success');
+            } else {
+                echo $this->createNotice('There was a problem saving the settings', 'error');
+            }
+        }
+
+        // alpaca js and css
+        enqueue('alpaca-lodash', '//cdn.jsdelivr.net/npm/lodash@4.17.15/lodash.min.js');
+        enqueue('handlebars-script', '//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js');
+        enqueue('basealpaca-style', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css');
+        enqueue('basealpaca-script', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.js', ['jquery']);
+
+        // form setup
+        $id = static::getSlug() . '-' .  hash('md5', $definition);
+        $merged = array_replace_recursive((array) $defaults, (array) $this->getOptions());
+        $data = json_encode((object) $merged);
+        $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
+        $templates = file_get_contents(__DIR__ . '/WordpressPluginFrameworkAdmin.html');
+
+        // html
+        $loader = <<<HTML
+
+            {$templates}
+
+            <style>
+                #wp-plugin-admin .alpaca-message {
+                    color: var(--wc-red, '#a00');
+                }
+                #wp-plugin-admin .form-table td {
+                    margin-bottom: 0;
+                    padding-bottom: 0;
+                }
+                #wp-plugin-admin .form-table input[type="text"] {
+                    width: 25em;
+                }
+                #wp-plugin-admin .alpaca-container-item:not(:first-child),
+                #wp-plugin-admin .alpaca-control-buttons-container {
+                    margin-top: 0px !important;
+                }
+                #wp-plugin-admin .alpaca-form-buttons-container {
+                    text-align: left !important;
+                }
+            </style>
+
+            <div id="wp-plugin-admin">
+                <div id="{$id}" class="alpaca-form wrap"></div>
+            </div>
+
+            <script type="text/javascript">
+                jQuery(document).ready(function() {
+                    // json form definition
+                    {$definition}
+
+                    // setup nonce and submit button
+                    _.set(jsonSchema, 'schema.properties.wpnonce', {
+                        "required": true,
+                        "type": "string",
+                        "default": "{$nonce}"
+                    });
+                    _.set(jsonSchema, 'options.fields.wpnonce' , {
+                        "type": "hidden"
+                    });
+
+                    // setup save for wp
+                    _.set(jsonSchema, 'options.form.buttons.submit', {
+                        "value": "Save Changes",
+                        "styles": "btn btn-primary button button-primary"
+                    });
+                    _.set(jsonSchema, 'options.form.attributes', {
+                        "action": "",
+                        "method": "post"
+                    });
+
+                    // set view template
+                    Alpaca.registerView({
+                        "id": "wp-edit",
+                        "parent": "web-edit",
+                        "templates": {
+                            "container": "#wp-edit-container",
+                            //"container-object": "#wp-edit-object",
+                            //"container-object-item": "#wp-edit-object-item",
+                            "control": "#wp-edit-control"
+                        }
+                    });
+                    _.set(jsonSchema, 'view.parent', "wp-edit");
+
+                    // set default data
+                    _.set(jsonSchema, 'data', $data);
+
+                    // init
+                    jQuery('#{$id}').alpaca(jsonSchema);
+                });
+            </script>
+        HTML;
+        return $loader;
+    }
+
+    protected function save(array $data): bool
+    {
+        unset($data['wpnonce']);
+        $result = $this->setOption($data);
+        $this->onSave($data);
+        wp_cache_flush();
+        return $result;
+    }
+
+    public function onSave(array $data)
+    {
+        return $data;
+    }
+
+    protected function createNotice(string $message, string $level = 'info')
+    {
+        $l = (in_array($level, ['error', 'warning', 'success', 'info'])) ? $level : 'info';
+        $m = esc_html($message);
+        $notice = <<<HTML
+        <div class="notice notice-$l is-dismissible">
+            <p>$m</p>
+        </div>
+        HTML;
+        return $notice;
     }
 }
