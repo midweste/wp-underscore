@@ -38,34 +38,34 @@ abstract class WordpressPluginFramework
         static::$pluginSlug = $slug;
         static::$pluginFile = $file;
 
-        load_plugin_textdomain(static::getSlug(), false, dirname(plugin_basename(static::getFile())) . '/lang');
+        \load_plugin_textdomain(static::pluginGetSlug(), false, dirname(\plugin_basename(static::pluginGetFile())) . '/lang');
 
-        if (is_admin()) {
-            register_activation_hook(static::getFile(), [static::class, 'activate']);
-            register_deactivation_hook(static::getFile(), [static::class, 'deactivate']);
-            register_uninstall_hook(static::getFile(), [static::class, 'uninstall']);
+        if (\is_admin()) {
+            \register_activation_hook(static::pluginGetFile(), [static::class, 'pluginActivate']);
+            \register_deactivation_hook(static::pluginGetFile(), [static::class, 'pluginDeactivate']);
+            \register_uninstall_hook(static::pluginGetFile(), [static::class, 'pluginUninstall']);
         }
     }
 
-    public function run()
+    public function pluginRun()
     {
         $this->init();
-        if (is_admin()) {
-            $this->initAdmin();
+        if (\is_admin()) {
+            $this->pluginInitAdmin();
         }
     }
 
-    public static function getSlug()
+    public static function pluginGetSlug()
     {
         return static::$pluginSlug;
     }
 
-    public static function getName()
+    public static function pluginGetName()
     {
         return static::$pluginName;
     }
 
-    public static function getFile()
+    public static function pluginGetFile()
     {
         return static::$pluginFile;
     }
@@ -81,48 +81,48 @@ abstract class WordpressPluginFramework
     /**
      * Runs when the plugin is initialized on admin pages
      */
-    protected function initAdmin()
+    protected function pluginInitAdmin()
     {
     }
 
-    public function getOptions(): ?array
+    public function pluginGetOptions(): ?array
     {
-        return get_option(static::getSlug(), null);
+        return \get_option(static::pluginGetSlug(), null);
     }
 
-    public function setOption(array $data): bool
+    public function pluginSetOption(array $data): bool
     {
-        $current = $this->getOptions();
+        $current = $this->pluginGetOptions();
         if (!is_null($current)) {
             if ($current === $data) {
                 // have to compare existing value to what is going to be saved
                 // because wordpress is dumb and returns false if they are the same
                 return true;
             } else {
-                return update_option(static::getSlug(), $data, false);
+                return \update_option(static::pluginGetSlug(), $data, false);
             }
         } else {
-            return add_option(static::getSlug(), $data);
+            return \add_option(static::pluginGetSlug(), $data);
         }
     }
 
-    public function addShortcode(callable $function, string $shortcode = ''): self
+    public function pluginAddShortcode(callable $function, string $shortcode = ''): self
     {
-        $sc = (empty($shortcode)) ? static::getSlug() : $shortcode;
-        add_shortcode($sc, function ($atts, $content, $shortcode_tag) use ($function) {
+        $sc = (empty($shortcode)) ? static::pluginGetSlug() : $shortcode;
+        \add_shortcode($sc, function ($atts, $content, $shortcode_tag) use ($function) {
             $function($atts, $content, $shortcode_tag);
         });
         return $this;
     }
 
-    public function addAdminMenuPage(callable $callback, int $pos = 99, string $name = '', string $slug = '', string $perm = 'manage_options', string $icon = 'dashicons-schedule')
+    public function pluginAddAdminMenuPage(callable $callback, int $pos = 99, string $name = '', string $slug = '', string $perm = 'manage_options', string $icon = 'dashicons-schedule')
     {
         add_action('admin_menu', function () use ($name, $slug, $callback, $perm, $icon, $pos) {
-            $n = (empty($name)) ? static::getName() : $name;
-            $s = (empty($slug)) ? static::getSlug() : $slug;
-            add_menu_page(
-                __($n, $s),
-                __($n, $s),
+            $n = (empty($name)) ? static::pluginGetName() : $name;
+            $s = (empty($slug)) ? static::pluginGetSlug() : $slug;
+            \add_menu_page(
+                \__($n, $s),
+                \__($n, $s),
                 $perm,
                 $s . '-admin',
                 $callback,
@@ -164,22 +164,22 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function activate()
+    public static function pluginActivate()
     {
-        if (!current_user_can('activate_plugins')) {
+        if (!\current_user_can('activate_plugins')) {
             return;
         }
         $plugin = isset($_REQUEST['plugin']) ? $_REQUEST['plugin'] : '';
-        check_admin_referer("activate-plugin_{$plugin}");
+        \check_admin_referer("activate-plugin_{$plugin}");
 
-        update_option(static::getSlug() . '_activated', 'yes', false);
+        \update_option(static::pluginGetSlug() . '_activated', 'yes', false);
 
-        static::onActivate();
+        static::pluginOnActivate();
 
-        wp_cache_flush();
+        \wp_cache_flush();
     }
 
-    public static function onActivate()
+    public static function pluginOnActivate()
     {
     }
 
@@ -188,22 +188,22 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function deactivate()
+    public static function pluginDeactivate()
     {
-        if (!current_user_can('activate_plugins')) {
+        if (!\current_user_can('activate_plugins')) {
             return;
         }
         $plugin = isset($_REQUEST['plugin']) ? $_REQUEST['plugin'] : '';
-        check_admin_referer("deactivate-plugin_{$plugin}");
+        \check_admin_referer("deactivate-plugin_{$plugin}");
 
-        update_option(static::getSlug() . '_activated', 'no', false);
+        \update_option(static::pluginGetSlug() . '_activated', 'no', false);
 
-        static::onDeactivate();
+        static::pluginOnDeactivate();
 
-        wp_cache_flush();
+        \wp_cache_flush();
     }
 
-    public static function onDeactivate()
+    public static function pluginOnDeactivate()
     {
     }
 
@@ -212,12 +212,12 @@ abstract class WordpressPluginFramework
      *
      * @return void
      */
-    public static function uninstall()
+    public static function pluginUninstall()
     {
-        if (!current_user_can('activate_plugins')) {
+        if (!\current_user_can('activate_plugins')) {
             return;
         }
-        check_admin_referer('bulk-plugins');
+        \check_admin_referer('bulk-plugins');
 
         // Important: Check if the file is the one
         // that was registered during the uninstall hook.
@@ -225,19 +225,19 @@ abstract class WordpressPluginFramework
             return;
         }
 
-        delete_option(static::getSlug());
-        delete_option(static::getSlug() . '_activated');
+        \delete_option(static::pluginGetSlug());
+        \delete_option(static::pluginGetSlug() . '_activated');
 
-        static::onUninstall();
+        static::pluginOnUninstall();
 
-        wp_cache_flush();
+        \wp_cache_flush();
     }
 
-    public static function onUninstall()
+    public static function pluginOnUninstall()
     {
     }
 
-    public function alpacaAdminForm(string $path, array $defaults = [])
+    public function pluginAdminForm(string $path, array $defaults = [])
     {
         // json schema definition
         $definition = file_get_contents($path);
@@ -246,12 +246,12 @@ abstract class WordpressPluginFramework
         }
 
         // nonce
-        $nonce = wp_create_nonce(static::getSlug());
+        $nonce = \wp_create_nonce(static::pluginGetSlug());
         if (isset($_POST['wpnonce'])) {
-            if (wp_verify_nonce($_POST['wpnonce'], static::getSlug()) && $this->save($_POST)) {
-                echo $this->createNotice('Settings were saved', 'success');
+            if (\wp_verify_nonce($_POST['wpnonce'], static::pluginGetSlug()) && $this->pluginAdminFormSave($_POST)) {
+                echo $this->pluginNotice('Settings were saved', 'success');
             } else {
-                echo $this->createNotice('There was a problem saving the settings', 'error');
+                echo $this->pluginNotice('There was a problem saving the settings', 'error');
             }
         }
 
@@ -262,8 +262,8 @@ abstract class WordpressPluginFramework
         enqueue('basealpaca-script', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.js', ['jquery']);
 
         // form setup
-        $id = static::getSlug() . '-' .  hash('md5', $definition);
-        $merged = array_replace_recursive((array) $defaults, (array) $this->getOptions());
+        $id = static::pluginGetSlug() . '-' .  hash('md5', $definition);
+        $merged = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
         $data = json_encode((object) $merged);
         $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
         $templates = file_get_contents(__DIR__ . '/WordpressPluginFrameworkAdmin.html');
@@ -346,24 +346,24 @@ abstract class WordpressPluginFramework
         return $loader;
     }
 
-    protected function save(array $data): bool
+    protected function pluginAdminFormSave(array $data): bool
     {
         unset($data['wpnonce']);
-        $result = $this->setOption($data);
-        $this->onSave($data);
-        wp_cache_flush();
+        $result = $this->pluginSetOption($data);
+        $this->pluginOnAdminFormSave($data);
+        \wp_cache_flush();
         return $result;
     }
 
-    public function onSave(array $data)
+    public function pluginOnAdminFormSave(array $data)
     {
         return $data;
     }
 
-    protected function createNotice(string $message, string $level = 'info')
+    protected function pluginNotice(string $message, string $level = 'info')
     {
         $l = (in_array($level, ['error', 'warning', 'success', 'info'])) ? $level : 'info';
-        $m = esc_html($message);
+        $m = \esc_html($message);
         $notice = <<<HTML
         <div class="notice notice-$l is-dismissible">
             <p>$m</p>
