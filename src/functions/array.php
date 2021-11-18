@@ -12,3 +12,13 @@ function array_to_ul_li(array $array)
     $output .= '</ul>';
     return $output;
 }
+
+function array_replace_recursive_value(array $array, $search, $replace)
+{
+    array_walk_recursive($array, function (&$value) use ($search, $replace) {
+        if ($value === $search) {
+            $value = $replace;
+        }
+    });
+    return $array;
+}

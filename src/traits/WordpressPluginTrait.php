@@ -50,25 +50,32 @@ trait WordpressPluginTrait
     {
     }
 
-    public function pluginGetOptions(): ?array
+    public function pluginGetOptions(): array
     {
-        return \get_option(static::pluginSlug(), null);
+        $saved = \get_option(static::pluginSlug(), null);
+        return (is_null($saved) || !is_array($saved)) ? [] : $saved;
+    }
+
+    public function pluginGetOption(string $key, $default = null)
+    {
+        $options = $this->pluginGetOptions();
+        return (isset($options[$key])) ? $options[$key] : $default;
     }
 
     public function pluginSetOption(array $data): bool
     {
-        $current = $this->pluginGetOptions();
-        if (!is_null($current)) {
-            if ($current === $data) {
-                // have to compare existing value to what is going to be saved
-                // because wordpress is dumb and returns false if they are the same
-                return true;
-            } else {
-                return \update_option(static::pluginSlug(), $data, false);
-            }
-        } else {
-            return \add_option(static::pluginSlug(), $data);
+        $exists = option_exists(static::pluginSlug());
+        if (!$exists) {
+            return \add_option(static::pluginSlug(), $data, false);
         }
+
+        $current = $this->pluginGetOptions();
+        if ($current === $data) {
+            // have to compare existing value to what is going to be saved
+            // because wordpress is dumb and returns false if they are the same
+            return true;
+        }
+        return \update_option(static::pluginSlug(), $data, false);
     }
 
     public function pluginAddShortcode(callable $function, string $shortcode = ''): self
@@ -232,6 +239,15 @@ trait WordpressPluginTrait
         $id = static::pluginSlug() . '-' .  hash('md5', $definition);
         $nonce = \wp_create_nonce(static::pluginSlug());
         $merged = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
+        // // hack to handle checkbox booleans - alpaca expects boolean and not string true/false
+        // foreach ($merged as &$value) {
+        //     if ($value === 'false') {
+        //         $value = false;
+        //     } elseif ($value === 'true') {
+        //         $value = true;
+        //     }
+        // }
+
         $data = json_encode((object) $merged);
         $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
         $templates = file_get_contents(__DIR__ . '/WordpressPluginTraitAdmin.html');
@@ -270,6 +286,21 @@ trait WordpressPluginTrait
                     // json form definition
                     {$definition}
 
+                    // set view template
+                    Alpaca.registerView({
+                        "id": "wp-edit",
+                        "parent": "web-edit",
+                        "templates": {
+                            "form": "#wp-edit-form",
+                            "container": "#wp-edit-container",
+                            //"container-object": "#wp-edit-object",
+                            //"container-object-item": "#wp-edit-object-item",
+                            "control": "#wp-edit-control",
+                            "control-checkbox": "#wp-edit-control-checkbox"
+                        }
+                    });
+                    _.set(jsonSchema, 'view.parent', "wp-edit");
+
                     // setup nonce and submit button
                     _.set(jsonSchema, 'schema.properties.wpnonce', {
                         "required": true,
@@ -295,20 +326,6 @@ trait WordpressPluginTrait
                         "method": "post"
                     });
 
-                    // set view template
-                    Alpaca.registerView({
-                        "id": "wp-edit",
-                        "parent": "web-edit",
-                        "templates": {
-                            "form": "#wp-edit-form",
-                            "container": "#wp-edit-container",
-                            //"container-object": "#wp-edit-object",
-                            //"container-object-item": "#wp-edit-object-item",
-                            "control": "#wp-edit-control"
-                        }
-                    });
-                    _.set(jsonSchema, 'view.parent', "wp-edit");
-
                     // set default data
                     _.set(jsonSchema, 'data', $data);
 
@@ -323,6 +340,8 @@ trait WordpressPluginTrait
     protected function pluginAdminFormSave(array $data): bool
     {
         unset($data['wpnonce']);
+        $data = array_replace_recursive_value($data, "true", true);
+        $data = array_replace_recursive_value($data, "false", false);
         $result = $this->pluginSetOption($data);
         $this->pluginOnAdminFormSave($data);
         \wp_cache_flush();
