@@ -11,11 +11,12 @@
   },
   "autoload": {
     "psr-4": {
-      "_\\": "classes/"
+      "_\\": "classes/",
+      "_\\traits\\": "traits/"
     },
     "files": [
       "wp-underscore.php"
-    ]    
+    ]
   },
   "require-dev": {
     "brain/monkey": "^2.0"

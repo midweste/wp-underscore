@@ -16,60 +16,40 @@
  *
  */
 
-namespace _;
+namespace _\traits;
 
-defined('ABSPATH') || exit;
-
-define('WPPLUGIN_DIR', __DIR__);
-
-abstract class WordpressPluginFramework
+trait WordpressPluginFramework
 {
-    protected static $pluginFile;
-    protected static $pluginName;
-    protected static $pluginSlug;
+    // protected static $pluginFile;
+    // protected static $pluginName;
+    // protected static $pluginSlug;
 
-    // abstract public static function getFile(): string;
-    // abstract public static function getName(): string;
-    // abstract public static function getSlug(): string;
+    abstract public static function pluginFile(): string;
+    abstract public static function pluginName(): string;
+    abstract public static function pluginSlug(): string;
 
-    public function __construct(string $name, string $slug, string $file)
-    {
-        static::$pluginName = $name;
-        static::$pluginSlug = $slug;
-        static::$pluginFile = $file;
-
-        \load_plugin_textdomain(static::pluginGetSlug(), false, dirname(\plugin_basename(static::pluginGetFile())) . '/lang');
-
-        if (\is_admin()) {
-            \register_activation_hook(static::pluginGetFile(), [static::class, 'pluginActivate']);
-            \register_deactivation_hook(static::pluginGetFile(), [static::class, 'pluginDeactivate']);
-            \register_uninstall_hook(static::pluginGetFile(), [static::class, 'pluginUninstall']);
-        }
-    }
+    //public function __construct(string $name, string $slug, string $file)
+    // {
+    //     static::$pluginName = $name;
+    //     static::$pluginSlug = $slug;
+    //     static::$pluginFile = $file;
+    // }
 
     public function pluginRun()
     {
+        \load_plugin_textdomain(static::pluginSlug(), false, dirname(\plugin_basename(static::pluginFile())) . '/lang');
+
+        if (\is_admin()) {
+            \register_activation_hook(static::pluginFile(), [static::class, 'pluginActivate']);
+            \register_deactivation_hook(static::pluginFile(), [static::class, 'pluginDeactivate']);
+            \register_uninstall_hook(static::pluginFile(), [static::class, 'pluginUninstall']);
+        }
+
         $this->pluginInit();
         if (\is_admin()) {
             $this->pluginInitAdmin();
         }
     }
-
-    public static function pluginGetSlug()
-    {
-        return static::$pluginSlug;
-    }
-
-    public static function pluginGetName()
-    {
-        return static::$pluginName;
-    }
-
-    public static function pluginGetFile()
-    {
-        return static::$pluginFile;
-    }
-
 
     /**
      * Runs when the plugin is initialized
@@ -87,7 +67,7 @@ abstract class WordpressPluginFramework
 
     public function pluginGetOptions(): ?array
     {
-        return \get_option(static::pluginGetSlug(), null);
+        return \get_option(static::pluginSlug(), null);
     }
 
     public function pluginSetOption(array $data): bool
@@ -99,16 +79,16 @@ abstract class WordpressPluginFramework
                 // because wordpress is dumb and returns false if they are the same
                 return true;
             } else {
-                return \update_option(static::pluginGetSlug(), $data, false);
+                return \update_option(static::pluginSlug(), $data, false);
             }
         } else {
-            return \add_option(static::pluginGetSlug(), $data);
+            return \add_option(static::pluginSlug(), $data);
         }
     }
 
     public function pluginAddShortcode(callable $function, string $shortcode = ''): self
     {
-        $sc = (empty($shortcode)) ? static::pluginGetSlug() : $shortcode;
+        $sc = (empty($shortcode)) ? static::pluginSlug() : $shortcode;
         \add_shortcode($sc, function ($atts, $content, $shortcode_tag) use ($function) {
             $function($atts, $content, $shortcode_tag);
         });
@@ -118,8 +98,8 @@ abstract class WordpressPluginFramework
     public function pluginAddAdminMenuPage(callable $callback, int $pos = 99, string $name = '', string $slug = '', string $perm = 'manage_options', string $icon = 'dashicons-schedule')
     {
         add_action('admin_menu', function () use ($name, $slug, $callback, $perm, $icon, $pos) {
-            $n = (empty($name)) ? static::pluginGetName() : $name;
-            $s = (empty($slug)) ? static::pluginGetSlug() : $slug;
+            $n = (empty($name)) ? static::pluginName() : $name;
+            $s = (empty($slug)) ? static::pluginSlug() : $slug;
             \add_menu_page(
                 \__($n, $s),
                 \__($n, $s),
@@ -172,7 +152,7 @@ abstract class WordpressPluginFramework
         $plugin = isset($_REQUEST['plugin']) ? $_REQUEST['plugin'] : '';
         \check_admin_referer("activate-plugin_{$plugin}");
 
-        \update_option(static::pluginGetSlug() . '_activated', 'yes', false);
+        \update_option(static::pluginSlug() . '_activated', 'yes', false);
 
         static::pluginOnActivate();
 
@@ -196,7 +176,7 @@ abstract class WordpressPluginFramework
         $plugin = isset($_REQUEST['plugin']) ? $_REQUEST['plugin'] : '';
         \check_admin_referer("deactivate-plugin_{$plugin}");
 
-        \update_option(static::pluginGetSlug() . '_activated', 'no', false);
+        \update_option(static::pluginSlug() . '_activated', 'no', false);
 
         static::pluginOnDeactivate();
 
@@ -225,8 +205,8 @@ abstract class WordpressPluginFramework
             return;
         }
 
-        \delete_option(static::pluginGetSlug());
-        \delete_option(static::pluginGetSlug() . '_activated');
+        \delete_option(static::pluginSlug());
+        \delete_option(static::pluginSlug() . '_activated');
 
         static::pluginOnUninstall();
 
@@ -246,7 +226,7 @@ abstract class WordpressPluginFramework
         }
 
         // form actions
-        if (isset($_POST['wpnonce']) && \wp_verify_nonce($_POST['wpnonce'], static::pluginGetSlug())) {
+        if (isset($_POST['wpnonce']) && \wp_verify_nonce($_POST['wpnonce'], static::pluginSlug())) {
             if ($_POST['action'] == 'save') {
                 if ($this->pluginAdminFormSave($_POST)) {
                     echo $this->pluginNotice('Settings were saved', 'success');
@@ -264,8 +244,8 @@ abstract class WordpressPluginFramework
         enqueue('masked-input', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.min.js', ['jquery']);
 
         // form setup
-        $id = static::pluginGetSlug() . '-' .  hash('md5', $definition);
-        $nonce = \wp_create_nonce(static::pluginGetSlug());
+        $id = static::pluginSlug() . '-' .  hash('md5', $definition);
+        $nonce = \wp_create_nonce(static::pluginSlug());
         $merged = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
         $data = json_encode((object) $merged);
         $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
