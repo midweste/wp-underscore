@@ -1,24 +1,9 @@
 <?php
-/*
- *
- * @link              https://github.com/midweste
- * @since             1.0.0
- * @package           Wordpress Plugin Framework
- *
- * @wordpress-plugin
- * Plugin Name:       Wordpress Plugin Framework
- * Plugin URI:        https://github.com/midweste
- * Description:       Wordpress Plugin Framework
- * Version:           1.0.0
- * Author:            Midweste
- * Author URI:        https://github.com/midweste
- * License:           GPL-2.0+
- *
- */
 
-namespace _\traits;
 
-trait WordpressPluginFramework
+namespace _;
+
+trait WordpressPluginTrait
 {
     // protected static $pluginFile;
     // protected static $pluginName;
@@ -249,7 +234,7 @@ trait WordpressPluginFramework
         $merged = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
         $data = json_encode((object) $merged);
         $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
-        $templates = file_get_contents(__DIR__ . '/WordpressPluginFrameworkAdmin.html');
+        $templates = file_get_contents(__DIR__ . '/WordpressPluginTraitAdmin.html');
 
         // html
         $loader = <<<HTML

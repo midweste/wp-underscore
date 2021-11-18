@@ -11,8 +11,10 @@
   },
   "autoload": {
     "psr-4": {
-      "_\\": "classes/",
-      "_\\traits\\": "traits/"
+      "_\\": [
+        "src/classes/",
+        "src/traits/"
+      ]
     },
     "files": [
       "wp-underscore.php"
