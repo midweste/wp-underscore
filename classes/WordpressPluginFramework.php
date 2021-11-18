@@ -245,13 +245,14 @@ abstract class WordpressPluginFramework
             throw new \Exception(sprintf('Could not find json schema definition at %s', $path));
         }
 
-        // nonce
-        $nonce = \wp_create_nonce(static::pluginGetSlug());
-        if (isset($_POST['wpnonce'])) {
-            if (\wp_verify_nonce($_POST['wpnonce'], static::pluginGetSlug()) && $this->pluginAdminFormSave($_POST)) {
-                echo $this->pluginNotice('Settings were saved', 'success');
-            } else {
-                echo $this->pluginNotice('There was a problem saving the settings', 'error');
+        // form actions
+        if (isset($_POST['wpnonce']) && \wp_verify_nonce($_POST['wpnonce'], static::pluginGetSlug())) {
+            if ($_POST['action'] == 'save') {
+                if ($this->pluginAdminFormSave($_POST)) {
+                    echo $this->pluginNotice('Settings were saved', 'success');
+                } else {
+                    echo $this->pluginNotice('There was a problem saving the settings', 'error');
+                }
             }
         }
 
@@ -260,9 +261,11 @@ abstract class WordpressPluginFramework
         enqueue('handlebars-script', '//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.js');
         enqueue('basealpaca-style', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css');
         enqueue('basealpaca-script', '//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.js', ['jquery']);
+        enqueue('masked-input', '//cdnjs.cloudflare.com/ajax/libs/jquery.maskedinput/1.4.1/jquery.maskedinput.min.js', ['jquery']);
 
         // form setup
         $id = static::pluginGetSlug() . '-' .  hash('md5', $definition);
+        $nonce = \wp_create_nonce(static::pluginGetSlug());
         $merged = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
         $data = json_encode((object) $merged);
         $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
@@ -315,7 +318,12 @@ abstract class WordpressPluginFramework
                     // setup save for wp
                     _.set(jsonSchema, 'options.form.buttons.submit', {
                         "value": "Save Changes",
-                        "styles": "btn btn-primary button button-primary"
+                        "type": "submit",
+                        "styles": "btn btn-primary button button-primary",
+                        "attributes": {
+                            "name": "action",
+                            "value": "save"
+                        }
                     });
                     _.set(jsonSchema, 'options.form.attributes', {
                         "action": "",
@@ -327,6 +335,7 @@ abstract class WordpressPluginFramework
                         "id": "wp-edit",
                         "parent": "web-edit",
                         "templates": {
+                            "form": "#wp-edit-form",
                             "container": "#wp-edit-container",
                             //"container-object": "#wp-edit-object",
                             //"container-object-item": "#wp-edit-object-item",

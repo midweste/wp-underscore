@@ -27,6 +27,6 @@ function image_styles_registered()
     if (isset($_wp_additional_image_sizes) && count($_wp_additional_image_sizes)) {
         $image_sizes = array_merge($image_sizes, $_wp_additional_image_sizes);
     }
-
+    // d($_wp_additional_image_sizes, $default_image_sizes, $image_sizes);
     return $image_sizes;
 }

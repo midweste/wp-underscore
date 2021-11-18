@@ -183,7 +183,7 @@ function cache_redis_delete_keys(string $group): ?bool
     return call_user_func_array(array(&$redis, 'del'), $matches);
 }
 
-function cache_memcached_get_all_keys(string $host = '127.0.0.1', int $port = 11211): array
+function cache_memcached_get_all_keys(string $host = '127.0.0.1', int $port = 11211)
 {
     static $keys;
     if (!empty($keys)) {
