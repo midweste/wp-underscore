@@ -3,7 +3,7 @@
 namespace _;
 
 /**
- * Get all the registered image sizes along with their dimensions
+ * Return the registered image styles along with their dimensions and crop settings
  *
  * @global array $_wp_additional_image_sizes
  *
@@ -29,4 +29,16 @@ function image_styles_registered()
     }
     // d($_wp_additional_image_sizes, $default_image_sizes, $image_sizes);
     return $image_sizes;
+}
+
+/**
+ * Return a registered image style along with its dimensions and crop settings
+ *
+ * @param string $slug
+ * @return array
+ */
+function image_style(string $slug): array
+{
+    $styles = image_styles_registered();
+    return (isset($styles[$slug])) ? $styles[$slug] : [];
 }
