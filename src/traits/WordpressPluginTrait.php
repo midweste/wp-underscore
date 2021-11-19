@@ -5,20 +5,10 @@ namespace _;
 
 trait WordpressPluginTrait
 {
-    // protected static $pluginFile;
-    // protected static $pluginName;
-    // protected static $pluginSlug;
 
     abstract public static function pluginFile(): string;
     abstract public static function pluginName(): string;
     abstract public static function pluginSlug(): string;
-
-    //public function __construct(string $name, string $slug, string $file)
-    // {
-    //     static::$pluginName = $name;
-    //     static::$pluginSlug = $slug;
-    //     static::$pluginFile = $file;
-    // }
 
     public function pluginRun()
     {
@@ -146,7 +136,7 @@ trait WordpressPluginTrait
 
         \update_option(static::pluginSlug() . '_activated', 'yes', false);
 
-        static::pluginOnActivate();
+        do_action(static::pluginSlug() . '_activated');
 
         \wp_cache_flush();
     }
@@ -170,13 +160,9 @@ trait WordpressPluginTrait
 
         \update_option(static::pluginSlug() . '_activated', 'no', false);
 
-        static::pluginOnDeactivate();
+        do_action(static::pluginSlug() . '_deactivated');
 
         \wp_cache_flush();
-    }
-
-    public static function pluginOnDeactivate()
-    {
     }
 
     /**
@@ -200,13 +186,9 @@ trait WordpressPluginTrait
         \delete_option(static::pluginSlug());
         \delete_option(static::pluginSlug() . '_activated');
 
-        static::pluginOnUninstall();
+        do_action(static::pluginSlug() . '_uninstalled');
 
         \wp_cache_flush();
-    }
-
-    public static function pluginOnUninstall()
-    {
     }
 
     public function pluginAdminForm(string $path, array $defaults = [])
@@ -238,18 +220,9 @@ trait WordpressPluginTrait
         // form setup
         $id = static::pluginSlug() . '-' .  hash('md5', $definition);
         $nonce = \wp_create_nonce(static::pluginSlug());
-        $merged = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
-        // // hack to handle checkbox booleans - alpaca expects boolean and not string true/false
-        // foreach ($merged as &$value) {
-        //     if ($value === 'false') {
-        //         $value = false;
-        //     } elseif ($value === 'true') {
-        //         $value = true;
-        //     }
-        // }
+        $mergedData = array_replace_recursive((array) $defaults, (array) $this->pluginGetOptions());
 
-        $data = json_encode((object) $merged);
-        $path = '/' . str_replace(ABSPATH, '', __DIR__); //_\path_relative(__DIR__);
+        $jsonData = json_encode((object) $mergedData);
         $templates = file_get_contents(__DIR__ . '/WordpressPluginTraitAdmin.html');
 
         // html
@@ -321,13 +294,14 @@ trait WordpressPluginTrait
                             "value": "save"
                         }
                     });
+
                     _.set(jsonSchema, 'options.form.attributes', {
                         "action": "",
                         "method": "post"
                     });
 
                     // set default data
-                    _.set(jsonSchema, 'data', $data);
+                    _.set(jsonSchema, 'data', $jsonData);
 
                     // init
                     jQuery('#{$id}').alpaca(jsonSchema);
@@ -339,18 +313,20 @@ trait WordpressPluginTrait
 
     protected function pluginAdminFormSave(array $data): bool
     {
+        // change string true false values to booleans
+        $data = array_replace_values_recursive($data, ['true', 'false'], [true, false]);
+
+        $data = \apply_filters(static::pluginSlug() . '_pre_save', $data);
+
         unset($data['wpnonce']);
-        $data = array_replace_recursive_value($data, "true", true);
-        $data = array_replace_recursive_value($data, "false", false);
+        unset($data['action']);
+
         $result = $this->pluginSetOption($data);
-        $this->pluginOnAdminFormSave($data);
+
+        \do_action(static::pluginSlug() . '_post_save', $data);
+
         \wp_cache_flush();
         return $result;
-    }
-
-    public function pluginOnAdminFormSave(array $data)
-    {
-        return $data;
     }
 
     protected function pluginNotice(string $message, string $level = 'info')
