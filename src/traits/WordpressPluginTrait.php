@@ -115,7 +115,7 @@ trait WordpressPluginTrait
         return $this->enqueueAdd('wp_enqueue_scripts', $handle, $file_path, $depends);
     }
 
-    protected function enqueueConditionally(string $handle, string $file_path, array $depends = [], callable $callback): self
+    protected function enqueueConditionally(string $handle, string $file_path, callable $callback, array $depends = []): self
     {
         return $this->enqueueAdd($callback, $handle, $file_path, $depends);
     }
