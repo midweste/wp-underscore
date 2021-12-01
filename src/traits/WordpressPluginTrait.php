@@ -134,7 +134,7 @@ trait WordpressPluginTrait
         $plugin = isset($_REQUEST['plugin']) ? $_REQUEST['plugin'] : '';
         \check_admin_referer("activate-plugin_{$plugin}");
 
-        \update_option(static::pluginSlug() . '_activated', 'yes', false);
+        \update_option(static::pluginSlug() . '_activated', 1, false);
 
         do_action(static::pluginSlug() . '_activated');
 
@@ -158,7 +158,7 @@ trait WordpressPluginTrait
         $plugin = isset($_REQUEST['plugin']) ? $_REQUEST['plugin'] : '';
         \check_admin_referer("deactivate-plugin_{$plugin}");
 
-        \update_option(static::pluginSlug() . '_activated', 'no', false);
+        \update_option(static::pluginSlug() . '_activated', 0, false);
 
         do_action(static::pluginSlug() . '_deactivated');
 
