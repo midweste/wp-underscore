@@ -84,9 +84,8 @@ function conditional_types(): array
 
     $types = [];
     foreach ($conditionals as $conditional) {
-        $name = str_replace('\\', '^', $conditional);
         if (function_exists($conditional) && $conditional()) {
-            $types[] = $name;
+            $types[] = $conditional;
         }
     }
 

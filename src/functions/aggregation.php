@@ -16,6 +16,7 @@ function files_aggregate_conditionally(string $globPath, int $expires = 0, calla
     foreach ($conditionals as $conditional) {
         $conditionalPath = $base . '/' . $conditional;
         if (is_dir($conditionalPath)) {
+            $conditionalPath = addslashes($conditionalPath);
             $absPath = str_replace($base, $conditionalPath, $globPath);
             $conditionalHtml .= cache_glob_files($absPath, $absPath, $expires, $callback);
         }
