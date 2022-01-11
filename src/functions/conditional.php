@@ -32,7 +32,7 @@ function conditional_types(): array
         'is_singular',
         'is_main_query',
         'is_page_template',
-        'is_ajax',
+        'wp_doing_ajax',
         // woo
         'is_woocommerce',
         'is_shop',
