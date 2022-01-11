@@ -49,6 +49,7 @@ function conditional_types(): array
     $conditionals = apply_filters('_conditional_types', $conditionals);
 
     $excluded = [
+        'is_ajax', //deprecated
         // 'is_blog_installed',
         'is_comments_popup',
         // 'is_header_video_active',
