@@ -21,7 +21,7 @@ function hook_callback_priority(string $hook, string $function): ?int
  * @param string $function
  * @return boolean
  */
-function filter_remove(string $hook, string $function): bool
+function hook_remove(string $hook, string $function): bool
 {
     $priority = hook_callback_priority($hook, $function);
     if (!$priority) {
@@ -31,7 +31,7 @@ function filter_remove(string $hook, string $function): bool
 }
 
 /**
- * Removes a hook callback regardless of priority
+ * Alias for hook_remove that removes a hook callback regardless of priority
  *
  * @param string $hook
  * @param string $function
@@ -39,5 +39,17 @@ function filter_remove(string $hook, string $function): bool
  */
 function action_remove(string $hook, string $function): bool
 {
-    return filter_remove($hook, $function);
+    return hook_remove($hook, $function);
+}
+
+/**
+ * Alias for hook_remove that removes a hook callback regardless of priority
+ *
+ * @param string $hook
+ * @param string $function
+ * @return boolean
+ */
+function filter_remove(string $hook, string $function): bool
+{
+    return hook_remove($hook, $function);
 }
