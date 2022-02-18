@@ -19,11 +19,11 @@ namespace _;
  * Requires PHP:      7.2
  */
 
-define('WPUNDERSCORE', dirname(__FILE__));
+define( 'WPUNDERSCORE', dirname( __FILE__ ) );
 
 call_user_func(function () {
-    //require_once WPUNDERSCORE . '/vendor/autoload.php';
-    foreach (glob(WPUNDERSCORE . '/src/functions/*.php') as $autoload) {
-        require_once $autoload;
-    }
+	//require_once WPUNDERSCORE . '/vendor/autoload.php';
+	foreach ( glob( WPUNDERSCORE . '/src/functions/*.php' ) as $autoload ) {
+		require_once $autoload;
+	}
 });
