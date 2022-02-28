@@ -2,9 +2,9 @@
 
 namespace _;
 
-function taxonomy_copy_term_recursive( int|string|WP_Term $term, string $source_taxonomy, string $destination_taxonomy, int $parent = 0 ): WP_Term {
+function taxonomy_copy_term_recursive( int|string|\WP_Term $term, string $source_taxonomy, string $destination_taxonomy, int $parent = 0 ): \WP_Term {
 
-	if ( ! $term instanceof WP_Term ) {
+	if ( ! $term instanceof \WP_Term ) {
 		$term = get_term( $term, $source_taxonomy );
 	}
 
