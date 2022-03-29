@@ -188,3 +188,19 @@ function is_uri(string $uri): bool
 {
     return (filter_var($uri, FILTER_VALIDATE_URL) !== false);
 }
+
+function uri_to_absolute(string $uri): string
+{
+    $replaced = str_replace(WP_HOME, '', $uri);
+    return (strpos($replaced, '/') === 0) ? WP_HOME . $replaced : WP_HOME . '/' . $replaced;
+}
+
+function uri_is_absolute(string $uri): string
+{
+    return strpos(trim($uri), '//') === 0 || strpos(trim($uri), '/') === 0;
+}
+
+function uri_is_relative(string $uri): string
+{
+    return uri_is_absolute($uri) === false;
+}

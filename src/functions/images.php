@@ -69,32 +69,29 @@ function image_parent(string $path_or_uri): string
 }
 
 /**
- * Return the post_id of the parent image linked to the path provided
+ * Return the post_id of the parent image linked to the uri provided
  *
- * @param string $path_or_uri
+ * @param string $uri
  * @return integer|null
  */
-function image_parent_id(string $path_or_uri): ?int
+function image_parent_id(string $uri): ?int
 {
     global $wpdb;
-    $parent = image_parent($path_or_uri);
-    $path_relative_uploads = uploads_relative($parent);
+    $parent = image_parent($uri);
+    $path_relative_uploads = uploads_relative_uri($parent);
     $like = '%' . $wpdb->esc_like($path_relative_uploads) . '%';
     $media_id = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key IN ('_wp_attached_file', '_wp_attachment_metadata') AND meta_value LIKE %s", $like));
     return (is_numeric($media_id)) ? $media_id : null;
 }
 
 /**
- * Return image style based on path or uri.  Will choose the first matching size with matching dimensions
+ * Return image style based on uri.  Will choose the first matching size with matching dimensions
  *
  * @param string $uri
  * @return string
  */
 function image_style_by_uri(string $uri): string
 {
-    if (!is_uri($uri)) {
-        throw new \Exception('Not a valid uri');
-    }
     // check first if image is the base image
     $style = 'full';
     $dimension_pattern = '/.*?\-(\d*)x(\d*)\.\w*$/';
@@ -112,9 +109,10 @@ function image_style_by_uri(string $uri): string
         return $style;
     }
     $styles = image_styles_registered();
+    $absolute_uri = uri_to_absolute($uri);
     foreach ($styles as $name => $data) {
         list($style_src, $style_width, $style_height) = image_downsize($parent_id, $name);
-        if ($uri === $style_src && $width === $style_width && $height === $style_height) {
+        if ($absolute_uri === $style_src && $width === $style_width && $height === $style_height) {
             return $name;
         }
     }
