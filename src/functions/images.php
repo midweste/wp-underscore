@@ -87,15 +87,18 @@ function image_parent_id(string $path_or_uri): ?int
 /**
  * Return image style based on path or uri.  Will choose the first matching size with matching dimensions
  *
- * @param string $path_or_uri
+ * @param string $uri
  * @return string
  */
-function image_style_by_path(string $path_or_uri): string
+function image_style_by_uri(string $uri): string
 {
+    if (!is_uri($uri)) {
+        throw new \Exception('Not a valid uri');
+    }
     // check first if image is the base image
     $style = 'full';
     $dimension_pattern = '/.*?\-(\d*)x(\d*)\.\w*$/';
-    preg_match($dimension_pattern, $path_or_uri, $matches);
+    preg_match($dimension_pattern, $uri, $matches);
     if (empty($matches) || !is_numeric($matches[1]) || !is_numeric($matches[2])) {
         return $style;
     }
@@ -104,14 +107,14 @@ function image_style_by_path(string $path_or_uri): string
     $width = (int) $matches[1];
     $height = (int) $matches[2];
 
-    $parent_id = image_parent_id($path_or_uri);
+    $parent_id = image_parent_id($uri);
     if (!is_numeric($parent_id)) {
         return $style;
     }
     $styles = image_styles_registered();
     foreach ($styles as $name => $data) {
         list($style_src, $style_width, $style_height) = image_downsize($parent_id, $name);
-        if ($path_or_uri === $style_src && $width === $style_width && $height === $style_height) {
+        if ($uri === $style_src && $width === $style_width && $height === $style_height) {
             return $name;
         }
     }
