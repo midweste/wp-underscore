@@ -78,7 +78,7 @@ function image_parent_id(string $path_or_uri): ?int
 {
     global $wpdb;
     $parent = image_parent($path_or_uri);
-    $path_relative_uploads = ltrim(uploads_relative_uri($parent), '/');
+    $path_relative_uploads = uploads_relative($parent);
     $like = '%' . $wpdb->esc_like($path_relative_uploads) . '%';
     $media_id = $wpdb->get_var($wpdb->prepare("SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key IN ('_wp_attached_file', '_wp_attachment_metadata') AND meta_value LIKE %s", $like));
     return (is_numeric($media_id)) ? $media_id : null;
@@ -92,13 +92,15 @@ function image_parent_id(string $path_or_uri): ?int
  */
 function image_style_by_path(string $path_or_uri): string
 {
-    // check first if image is a generated type
+    // check first if image is the base image
     $style = 'full';
     $dimension_pattern = '/.*?\-(\d*)x(\d*)\.\w*$/';
     preg_match($dimension_pattern, $path_or_uri, $matches);
     if (empty($matches) || !is_numeric($matches[1]) || !is_numeric($matches[2])) {
         return $style;
     }
+
+    // image looks to be a sub style, get parent and check styles
     $width = (int) $matches[1];
     $height = (int) $matches[2];
 
@@ -112,10 +114,6 @@ function image_style_by_path(string $path_or_uri): string
         if ($path_or_uri === $style_src && $width === $style_width && $height === $style_height) {
             return $name;
         }
-        // $this_uri = wp_get_attachment_image_url($parent_id, $name);
-        // if ($path_or_uri === $this_uri) {
-        //     return $name;
-        // }
     }
     return $style;
 }
