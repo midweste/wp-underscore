@@ -118,3 +118,35 @@ function image_style_by_uri(string $uri): string
     }
     return $style;
 }
+
+function image_svg_dimensions(string $uri): array
+{
+    $dimensions = [
+        'width' => null,
+        'height' => null
+    ];
+
+    $xml = simplexml_load_file(uri_to_path($uri));
+    if (!$xml instanceof \SimpleXMLElement) {
+        return $dimensions;
+    }
+
+    $attr = $xml->attributes();
+
+    // width height directly set
+    if (isset($attr->width, $attr->height)) {
+        $dimensions['width'] = (string) $attr->width;
+        $dimensions['height'] = (string) $attr->height;
+        return $dimensions;
+    }
+
+    // viewbox
+    if (isset($attr->viewBox)) {
+        $viewbox = explode(' ', $attr->viewBox);
+        $dimensions['width'] = count($viewbox) === 4 ? (string) $viewbox[2] : null;
+        $dimensions['height'] = count($viewbox) === 4 ? (string) $viewbox[3] : null;
+        return $dimensions;
+    }
+
+    return $dimensions;
+}
