@@ -2,6 +2,12 @@
 
 namespace _;
 
+/**
+ * Create a new attachment based on a filepath
+ *
+ * @param string $path
+ * @return integer
+ */
 function attachment_create(string $path): int
 {
     if (!is_file($path)) {
@@ -27,6 +33,12 @@ function attachment_create(string $path): int
     return $attach_id;
 }
 
+/**
+ * Regenerate all metadata for an attachment id
+ *
+ * @param integer $attachment_id
+ * @return boolean
+ */
 function attachment_regenerate_metadata(int $attachment_id): bool
 {
     $filepath = \get_attached_file($attachment_id);
@@ -42,6 +54,13 @@ function attachment_regenerate_metadata(int $attachment_id): bool
     return ($result === false) ? false : true;
 }
 
+/**
+ * Regenerate an attachment, optionally with a new attached file
+ *
+ * @param integer $attachment_id
+ * @param string $new_path
+ * @return boolean
+ */
 function attachment_regenerate(int $attachment_id, string $new_path = ''): bool
 {
     $attached = true;
@@ -56,6 +75,12 @@ function attachment_regenerate(int $attachment_id, string $new_path = ''): bool
     return ($attached && $regenerated && $deleted) ? true : false;
 }
 
+/**
+ * Delete all images associated with an attachment id, including the main image
+ *
+ * @param integer $attachment_id
+ * @return boolean
+ */
 function attachment_delete_images(int $attachment_id): bool
 {
     if (!\wp_attachment_is_image($attachment_id)) {
