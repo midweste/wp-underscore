@@ -27,16 +27,48 @@ function attachment_create(string $path): int
     return $attach_id;
 }
 
-function attachment_change_path(int $attachment_id, string $filePath): bool
+function attachment_regenerate_metadata(int $attachment_id): bool
 {
-    $result = \update_attached_file($attachment_id, $filePath);
-
-    require_once(ABSPATH . 'wp-admin/includes/image.php');
-    $metadata = \wp_generate_attachment_metadata($attachment_id, $filePath);
-    if (!is_array($metadata)) {
-        throw new \Exception(sprintf('Could not generate attachment metadata for %s', $filePath));
+    $filepath = \get_attached_file($attachment_id);
+    if (!file_exists($filepath)) {
+        throw new \Exception(sprintf('File does not exist for attachment %d', $attachment_id));
     }
-
+    require_once(ABSPATH . 'wp-admin/includes/image.php');
+    $metadata = \wp_generate_attachment_metadata($attachment_id, $filepath);
+    if (!is_array($metadata)) {
+        throw new \Exception(sprintf('Could not generate attachment metadata for %s', $filepath));
+    }
     \clean_post_cache(\get_post($attachment_id));
     return ($result === false) ? false : true;
+}
+
+function attachment_regenerate(int $attachment_id, string $new_path = ''): bool
+{
+    $attached = true;
+    if ($new_path !== '') {
+        $original_path = \get_attached_file($attachment_id);
+        if ($original_path !== $new_path) {
+            $attached = \update_attached_file($attachment_id, $new_path);
+        }
+    }
+    $deleted = attachment_delete_images($attachment_id);
+    $regenerated = attachment_regenerate_metadata($attachment_id);
+    return ($attached && $regenerated && $deleted) ? true : false;
+}
+
+function attachment_delete_images(int $attachment_id): bool
+{
+    if (!\wp_attachment_is_image($attachment_id)) {
+        return false;
+    }
+    // taken from wp_delete_attachment
+    $meta = \wp_get_attachment_metadata($attachment_id);
+    $backup_sizes = \get_post_meta($attachment_id, '_wp_attachment_backup_sizes', true);
+    $file = \get_attached_file($attachment_id);
+    \wp_delete_attachment_files($attachment_id, $meta, $backup_sizes, $file);
+    if (file_exists($file)) {
+        throw new \Exception(sprintf('Could not clean old styles for attachment %d %s', $attachment_id, $file));
+    }
+    \clean_post_cache(\get_post($attachment_id));
+    return true;
 }
