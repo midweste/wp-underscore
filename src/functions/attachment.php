@@ -29,15 +29,14 @@ function attachment_create(string $path): int
 
 function attachment_change_path(int $attachment_id, string $filePath): bool
 {
-    $metadata = \wp_generate_attachment_metadata($attachment_id, $filePath);
+    $result = \update_attached_file($attachment_id, $filePath);
 
+    require_once(ABSPATH . 'wp-admin/includes/image.php');
+    $metadata = \wp_generate_attachment_metadata($attachment_id, $filePath);
     if (!is_array($metadata)) {
         throw new \Exception(sprintf('Could not generate attachment metadata for %s', $filePath));
     }
-    $result = \update_attached_file($attachment_id, $filePath);
+
     \clean_post_cache(\get_post($attachment_id));
-    if ($result === false) {
-        return false;
-    }
-    return true;
+    return ($result === false) ? false : true;
 }
