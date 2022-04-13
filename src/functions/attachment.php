@@ -48,10 +48,10 @@ function attachment_regenerate_metadata(int $attachment_id): bool
     require_once(ABSPATH . 'wp-admin/includes/image.php');
     $metadata = \wp_generate_attachment_metadata($attachment_id, $filepath);
     if (!is_array($metadata)) {
-        throw new \Exception(sprintf('Could not generate attachment metadata for %s', $filepath));
+        return false;
     }
     \clean_post_cache(\get_post($attachment_id));
-    return ($result === false) ? false : true;
+    return true;
 }
 
 /**
@@ -63,14 +63,15 @@ function attachment_regenerate_metadata(int $attachment_id): bool
  */
 function attachment_regenerate(int $attachment_id, string $new_path = ''): bool
 {
-    $attached = true;
+    $attached = $deleted = true;
     if ($new_path !== '') {
         $original_path = \get_attached_file($attachment_id);
         if ($original_path !== $new_path) {
+            // delete images from previous name
+            $deleted = attachment_delete_images($attachment_id);
             $attached = \update_attached_file($attachment_id, $new_path);
         }
     }
-    $deleted = attachment_delete_images($attachment_id);
     $regenerated = attachment_regenerate_metadata($attachment_id);
     return ($attached && $regenerated && $deleted) ? true : false;
 }
