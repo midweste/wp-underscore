@@ -102,3 +102,16 @@ function attachment_delete_images(int $attachment_id): bool
     \clean_post_cache(\get_post($attachment_id));
     return true;
 }
+
+/**
+ * Return a boolean true if an attachment has been edited
+ *
+ * @param integer $attachment_id
+ * @return boolean
+ */
+function attachment_image_is_edited(int $attachment_id): bool
+{
+    $file = get_attached_file($attachment_id);
+    $original = wp_get_original_image_path($attachment_id);
+    return ($file !== $original) ? true : false;
+}
