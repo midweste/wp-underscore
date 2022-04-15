@@ -42,7 +42,7 @@ function attachment_create(string $path): int
 function attachment_regenerate_metadata(int $attachment_id): bool
 {
     $filepath = \get_attached_file($attachment_id);
-    if (!file_exists($filepath)) {
+    if (!is_file($filepath)) {
         throw new \Exception(sprintf('File does not exist for attachment %d', $attachment_id));
     }
     require_once(ABSPATH . 'wp-admin/includes/image.php');
@@ -67,12 +67,16 @@ function attachment_regenerate(int $attachment_id, string $new_path = ''): bool
     if ($new_path !== '') {
         $original_path = \get_attached_file($attachment_id);
         if ($original_path !== $new_path) {
+            if (!is_file($new_path) || filesize($new_path) === false) {
+                throw new \Exception(sprintf('Could not regenerate, file %s does not exist', $new_path));
+            }
             // delete images from previous name
             $deleted = attachment_delete_images($attachment_id);
             $attached = \update_attached_file($attachment_id, $new_path);
         }
     }
     $regenerated = attachment_regenerate_metadata($attachment_id);
+    \clean_post_cache(\get_post($attachment_id));
     return ($attached && $regenerated && $deleted) ? true : false;
 }
 
@@ -92,7 +96,7 @@ function attachment_delete_images(int $attachment_id): bool
     $backup_sizes = \get_post_meta($attachment_id, '_wp_attachment_backup_sizes', true);
     $file = \get_attached_file($attachment_id);
     \wp_delete_attachment_files($attachment_id, $meta, $backup_sizes, $file);
-    if (file_exists($file)) {
+    if (is_file($file)) {
         throw new \Exception(sprintf('Could not clean old styles for attachment %d %s', $attachment_id, $file));
     }
     \clean_post_cache(\get_post($attachment_id));
