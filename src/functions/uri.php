@@ -148,6 +148,12 @@ function permalink($post = 0, $leavename = false)
     return apply_filters('post_link', $permalink, $post, $leavename);
 }
 
+/**
+ * Return a relative link for any host
+ *
+ * @param string $uri
+ * @return string
+ */
 function uri_relative(string $uri): string
 {
     $p = parse_url($uri);
@@ -178,6 +184,52 @@ function uri_relative(string $uri): string
     // exit();
 }
 
+/**
+ * Return a relative uri only for links on current host
+ *
+ * @param string $uri
+ * @return string
+ */
+function uri_server_relative(string $uri, string $host = ''): string
+{
+    $p = parse_url($uri);
+    if ($p == null || $p == false) {
+        return $uri;
+    }
+    // bail on links to other servers
+    $host_check = ($host === '' || !is_string($host)) ? server_host() : $host;
+    if (!empty($p['host']) && $p['host'] !== $host_check) {
+        return $uri;
+    }
+    $qs = (!empty($p['query'])) ? '?' . $p['query'] : '';
+    if (empty($p['path']) || $p['path'] == '/') {
+        return '/' . $qs;
+    }
+    return rtrim($p['path'], '/') . $qs;
+
+    // $urls =  [
+    //     'https://www.example.com',
+    //     'https://www.example.com/',
+    //     'https://www.example.com?v=7516fd43adaa',
+    //     'https://www.example.com/?v=7516fd43adaa',
+    //     'https://tcbwoo.lndo.site',
+    //     'https://tcbwoo.lndo.site/',
+    //     'https://tcbwoo.lndo.site?v=7516fd43adaa',
+    //     'https://tcbwoo.lndo.site/?v=7516fd43adaa',
+    //     '/asdf/asdf?v=7516fd43adaa',
+    //     '/?v=7516fd43adaa',
+    //     '?v=7516fd43adaa',
+
+    // ];
+    // $parsed = [];
+    // foreach ($urls as $url) {
+    //     $parsed[$url] = url_relative($url);
+    // }
+    // d($parsed);
+    // exit();
+
+}
+
 function uri_to_path(string $url): string
 {
     $relative = str_replace(WP_HOME . '/', '', $url);
@@ -203,4 +255,41 @@ function uri_is_absolute(string $uri): string
 function uri_is_relative(string $uri): string
 {
     return uri_is_absolute($uri) === false;
+}
+
+function server_protocol()
+{
+    $isSecure = false;
+    if (!empty($_SERVER['HTTP_CF_VISITOR'])) {
+        $visitorData = @json_decode($_SERVER['HTTP_CF_VISITOR']); //phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+        if (!empty($visitorData) && !empty($visitorData->scheme) && $visitorData->scheme === 'https') {
+            $isSecure = true;
+        }
+    } elseif (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+        $isSecure = true;
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https' || !empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on') {
+        $isSecure = true;
+    }
+
+    return $isSecure ? 'https' : 'http';
+}
+
+function server_host()
+{
+    $host = $_SERVER['HTTP_HOST'];
+    if (!empty($_SERVER['HTTP_X_ORIGINAL_HOST'])) {
+        $host = $_SERVER['HTTP_X_ORIGINAL_HOST'];
+    }
+
+    // remove port number if using secure protocol and port is detected as 80 due to proxy
+    if (server_protocol() === 'https' && strpos($host, ':80') !== false) {
+        $host = current(explode(':', $host));
+    }
+
+    return $host;
+}
+
+function server_domain()
+{
+    return server_protocol() . '://' . server_host();
 }
