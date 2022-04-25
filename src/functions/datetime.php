@@ -12,7 +12,7 @@ function datetimezone(string $default = 'America/Los_Angeles'): \DateTimeZone
 
 function strtotime_timezoned(string $strtotime, string $format = 'U', string $timezone = '')
 {
-    $zone = ($timezone) ? $timezone : get_option('timezone_string', 'GMT');
+    $zone = new \DateTimeZone(($timezone) ? $timezone : get_option('timezone_string', 'GMT'));
     $dt = new \DateTime('@' . strtotime($strtotime));
     $dt->setTimeZone($zone);
     return $dt->format($format);
