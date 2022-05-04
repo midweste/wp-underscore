@@ -34,6 +34,19 @@ function is_post_edit_or_new(): bool
     return (is_post_edit() || is_post_new()) ? true : false;
 }
 
+function is_post_edit_or_new_type(string $post_type): bool
+{
+    $edit_or_new = is_post_edit_or_new();
+    if (!$edit_or_new || !isset($_GET['post']) || !is_numeric($_GET['post'])) {
+        return false;
+    }
+    $post = get_post($_GET['post']);
+    if (!isset($post->post_type) || $post->post_type !== $post_type) {
+        return false;
+    }
+    return true;
+}
+
 function conditional_types(): array
 {
     // https://codex.wordpress.org/Conditional_Tags
