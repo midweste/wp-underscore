@@ -10,10 +10,12 @@ function datetimezone(string $default = 'America/Los_Angeles'): \DateTimeZone
     return new \DateTimeZone(get_option('timezone_string', $default));
 }
 
-function strtotime_timezoned(string $strtotime, string $format = 'U', string $timezone = '')
+function strtotime_timezoned(string $strtotime, string $timezone = '')
 {
-    $zone = new \DateTimeZone(($timezone) ? $timezone : get_option('timezone_string', 'GMT'));
-    $dt = new \DateTime('@' . strtotime($strtotime));
-    $dt->setTimeZone($zone);
-    return $dt->format($format);
+    $gmt_dt = new \DateTime('@' . strtotime($strtotime)); // @timestamp always in GMT
+    $gmt_timestamp = $gmt_dt->format('U');
+    $desired_zone = ($timezone) ? $timezone : get_option('timezone_string', 'GMT');
+    $gmt_dt->setTimezone(new \DateTimeZone($desired_zone));
+    $seconds_offset = $gmt_dt->format('Z');
+    return $gmt_timestamp - $seconds_offset;
 }
