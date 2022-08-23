@@ -54,7 +54,7 @@ function file_fnmatch_recursive(string $directory, string $match = '*'): array
     return $files;
 }
 
-function file_fnmatch_recursive_walk(string $directory, string $match = '*', callable $function): bool
+function file_fnmatch_recursive_walk(string $directory, string $match, callable $function): bool
 {
     $files = file_fnmatch_recursive($directory, $match);
     foreach ($files as $file) {
