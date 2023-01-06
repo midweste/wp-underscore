@@ -81,3 +81,18 @@ function file_is_jpg(string $path): bool
     $mime_type = mime_content_type($path);
     return (strpos($mime_type, 'image/jpeg') === 0) ? true : false;
 }
+
+function file_crc(string $path): string
+{
+    // $path = realpath($filepath);
+    $hash = hash_file('crc32', $path);
+    return $hash;
+}
+
+function file_uri_crc(string $path): string
+{
+    // $path = realpath($filepath);
+    $hash = file_crc($path);
+    $url = path_to_uri($path);
+    return sprintf('%s?v=%s', $url, $hash);
+}
