@@ -84,6 +84,9 @@ function file_is_jpg(string $path): bool
 
 function file_crc(string $path): string
 {
+    if (!file_exists($path)) {
+        return '';
+    }
     // $path = realpath($filepath);
     $hash = hash_file('crc32', $path);
     return $hash;
