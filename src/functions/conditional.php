@@ -130,3 +130,19 @@ function conditional_types(): array
 
     return $types;
 }
+
+function is_local_resource(string $uri): bool
+{
+    if (strpos($uri, '/') === 0) {
+        return true;
+    }
+    if (strpos($uri, site_url()) === 0) {
+        return true;
+    }
+    $remote = wp_parse_url($uri, PHP_URL_HOST);
+    $site = wp_parse_url(site_url(), PHP_URL_HOST);
+    if ($remote === $site) {
+        return true;
+    }
+    return false;
+}
