@@ -133,6 +133,10 @@ function conditional_types(): array
 
 function is_local_resource(string $uri): bool
 {
+    $uri = trim($uri);
+    if (empty($uri)) {
+        return true;
+    }
     if (strpos($uri, '/') === 0) {
         return true;
     }
