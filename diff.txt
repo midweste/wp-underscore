@@ -1,0 +1,242 @@
+diff --git a/src/functions/cache.php b/src/functions/cache.php
+index 5967ba4..9600172 100644
+--- a/src/functions/cache.php
++++ b/src/functions/cache.php
+@@ -94,7 +94,7 @@ function cache_has(string $key): bool
+ function cache_delete_group(string $group): ?bool
+ {
+     if (!cache_enabled()) {
+-        return false;
++        return null;
+     }
+     // group is like post-321: with or without :
+     $groupNormalized = str_replace(' ', '', $group);
+@@ -102,20 +102,13 @@ function cache_delete_group(string $group): ?bool
+         return null;
+     }
+ 
+-    global $wp_object_cache;
+-    if (empty($wp_object_cache->redis)) {
+-        return null;
+-    }
+-    $redis = $wp_object_cache->redis;
+-
+-    $pattern = rtrim($groupNormalized, ':') . ':*';
+-    $matches = $redis->keys($pattern);
+-    if (empty($matches)) {
+-        return null;
++    if (cache_is_memcached()) {
++        // $pattern = rtrim($groupNormalized, ':') . ':*';
++        return cache_memcached_delete_keys([$group]);
++    } elseif (cache_is_redis()) {
++        return cache_redis_delete_keys($group);
+     }
+-
+-    //setting all keys as parameter of "del" function. Using this we can achieve $redisObj->del("key1","key2);
+-    return call_user_func_array(array(&$redis, 'del'), $matches);
++    return null;
+ }
+ 
+ function cache_memcached_delete_keys(array $keyPatterns): bool
+@@ -185,153 +178,70 @@ function cache_redis_delete_keys(string $group): ?bool
+ 
+ function cache_memcached_get_all_keys(string $host = '127.0.0.1', int $port = 11211)
+ {
+-    static $keys;
+-    if (!empty($keys)) {
+-        return $keys;
++    static $allKeys;
++    if (!empty($allKeys)) {
++        return $allKeys;
+     }
+ 
+-    $mem = @fsockopen($host, $port); //phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fsockopen,WordPress.PHP.NoSilencedErrors.Discouraged
+-    if ($mem === false) {
+-        return -1;
++    // https://www.php.net/manual/en/memcached.getallkeys.php
++    $sock = fsockopen($host, $port, $errno, $errstr, 3);
++    if ($sock === false) {
++        throw new \Exception("Error connection to server {$host} on port {$port}: ({$errno}) {$errstr}");
+     }
+ 
+-    // retrieve distinct slab
+-    $r = @fwrite($mem, 'stats items' . chr(10)); //phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fwrite,WordPress.PHP.NoSilencedErrors.Discouraged
+-    if ($r === false) {
+-        return -2;
++    if (fwrite($sock, "stats items\n") === false) {
++        throw new \Exception("Error writing to socket");
+     }
+ 
+-    $slab = array();
+-    while (($l = @fgets($mem, 1024)) !== false) {  //phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition,WordPress.PHP.NoSilencedErrors.Discouraged
+-        // sortie ?
+-        $l = trim($l);
+-        if ($l === 'END') {
++    $slabCounts = [];
++    while (($line = fgets($sock)) !== false) {
++        $line = trim($line);
++        if ($line === 'END') {
+             break;
+         }
+ 
+-        $m = array();
+-        // <STAT items:22:evicted_nonzero 0>
+-        $r = preg_match('/^STAT\sitems\:(\d+)\:/', $l, $m);
+-        if ($r !== 1) {
+-            return -3;
+-        }
+-        $a_slab = $m[1];
+-
+-        if (!array_key_exists($a_slab, $slab)) {
+-            $slab[$a_slab] = array();
++        // STAT items:8:number 3
++        if (preg_match('!^STAT items:(\d+):number (\d+)$!', $line, $matches)) {
++            $slabCounts[$matches[1]] = (int)$matches[2];
+         }
+     }
+ 
+-    // recuperer les items
+-    reset($slab);
+-    foreach ($slab as $a_slab_key => &$a_slab) {
+-        $r = @fwrite($mem, 'stats cachedump ' . $a_slab_key . ' 100' . chr(10)); //phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fwrite,WordPress.PHP.NoSilencedErrors.Discouraged
+-        if ($r === false) {
+-            return -4;
++    $allKeys = [];
++    foreach ($slabCounts as $slabNr => $slabCount) {
++        if (fwrite($sock, "lru_crawler metadump {$slabNr}\n") === false) {
++            throw new \Exception('Error writing to socket');
+         }
+ 
+-        while (($l = @fgets($mem, 1024)) !== false) { //phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition,WordPress.PHP.NoSilencedErrors.Discouraged
+-            // sortie ?
+-            $l = trim($l);
+-            if ($l === 'END') {
+-                break;
++        $count = 0;
++        while (($line = fgets($sock)) !== false) {
++            $line = trim($line);
++            if ($line === 'CLIENT_ERROR lru crawler disabled') {
++                throw new \Exception($line);
+             }
+ 
+-            $m = array();
+-            // ITEM 42 [118 b; 1354717302 s]
+-            $r = preg_match('/^ITEM\s([^\s]+)\s/', $l, $m);
+-            if ($r !== 1) {
+-                return -5;
++            if ($line === 'END') {
++                break;
+             }
+-            $a_key = $m[1];
+ 
+-            $a_slab[] = $a_key;
++            // key=foobar exp=1596440293 la=1596439293 cas=8492 fetch=no cls=24 size=14908
++            if (preg_match('!^key=(\S+)!', $line, $matches)) {
++                $allKeys[] = urldecode($matches[1]);
++                $count++;
++            }
+         }
++
++        // if ($count !== $slabCount) {
++        //     throw new Exception("Surprise, got {$count} keys instead of {$slabCount} keys");
++        // }
+     }
+ 
+-    // close
+-    @fclose($mem); //phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fclose,WordPress.PHP.NoSilencedErrors.Discouraged
+-    unset($mem);
+-
+-    // transform it;
+-    $keys = array();
+-    reset($slab);
+-    foreach ($slab as &$a_slab) {
+-        reset($a_slab);
+-        foreach ($a_slab as &$a_key) {
+-            $keys[] = $a_key;
+-        }
++    if (fclose($sock) === false) {
++        throw new \Exception('Error closing socket');
+     }
+-    unset($slab);
+ 
+-    return $keys;
++    return $allKeys;
+ }
+ 
+-// function OLD_cache_memcached_get_all_keys(string $host = '127.0.0.1', int $port = 11211): array
+-// {
+-//     static $allKeys;
+-//     if (!empty($allKeys)) {
+-//         return $allKeys;
+-//     }
+-//     $allKeys = [];
+-
+-//     // https://www.php.net/manual/en/memcached.getallkeys.php
+-//     $sock = fsockopen($host, $port, $errno, $errstr);
+-//     if ($sock === false) {
+-//         throw new Exception("Error connection to server {$host} on port {$port}: ({$errno}) {$errstr}");
+-//     }
+-
+-//     if (fwrite($sock, "stats items\n") === false) {
+-//         throw new Exception("Error writing to socket");
+-//     }
+-
+-//     $slabCounts = [];
+-//     while (($line = fgets($sock)) !== false) {
+-//         $line = trim($line);
+-//         if ($line === 'END') {
+-//             break;
+-//         }
+-
+-//         // STAT items:8:number 3
+-//         if (preg_match('!^STAT items:(\d+):number (\d+)$!', $line, $matches)) {
+-//             $slabCounts[$matches[1]] = (int)$matches[2];
+-//         }
+-//     }
+-
+-//     foreach ($slabCounts as $slabNr => $slabCount) {
+-//         if (fwrite($sock, "lru_crawler metadump {$slabNr}\n") === false) {
+-//             throw new Exception('Error writing to socket');
+-//         }
+-
+-//         $count = 0;
+-//         while (($line = fgets($sock)) !== false) {
+-//             $line = trim($line);
+-//             if ($line === 'END') {
+-//                 break;
+-//             }
+-//             if ($line === 'CLIENT_ERROR lru crawler disabled') {
+-//                 throw new Exception($line);
+-//             }
+-
+-//             // key=foobar exp=1596440293 la=1596439293 cas=8492 fetch=no cls=24 size=14908
+-//             if (preg_match('!^key=(\S+)!', $line, $matches)) {
+-//                 $allKeys[] = urldecode($matches[1]);
+-//                 $count++;
+-//             }
+-//         }
+-
+-//         // if ($count !== $slabCount) {
+-//         //     throw new Exception("Surprise, got {$count} keys instead of {$slabCount} keys");
+-//         // }
+-//     }
+-
+-//     if (fclose($sock) === false) {
+-//         throw new Exception('Error closing socket');
+-//     }
+-
+-//     return $allKeys;
+-// }
+-
+ function cache_is_redis(): bool
+ {
+     global $wp_object_cache;
+@@ -354,7 +264,7 @@ function cache_provider_name(): string
+     return 'unknown';
+ }
+ 
+-function &cache_provider(): ?\WP_Object_Cache
++function &cache_provider(): ?array
+ {
+     global $wp_object_cache;
+     if (empty($wp_object_cache) || empty($wp_object_cache->{cache_provider_name()})) {
