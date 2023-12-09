@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "725230aa76c0becdc2cfa60cb072292a",
+    "content-hash": "543645fb3d4918277d9095a59259014c",
     "packages": [
         {
             "name": "kint-php/kint",
-            "version": "5.0.7",
+            "version": "5.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kint-php/kint.git",
-                "reference": "a700653a77250b122920799b10c94e904c9b78c7"
+                "reference": "128303461092734a1e3cb4beb1eea9afe7a5a0ee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kint-php/kint/zipball/a700653a77250b122920799b10c94e904c9b78c7",
-                "reference": "a700653a77250b122920799b10c94e904c9b78c7",
+                "url": "https://api.github.com/repos/kint-php/kint/zipball/128303461092734a1e3cb4beb1eea9afe7a5a0ee",
+                "reference": "128303461092734a1e3cb4beb1eea9afe7a5a0ee",
                 "shasum": ""
             },
             "require": {
@@ -28,8 +28,8 @@
                 "phpspec/prophecy-phpunit": "^2",
                 "phpunit/phpunit": "^9",
                 "seld/phar-utils": "^1",
-                "symfony/finder": "^4.0 || ^5.0 || ^6.0",
-                "vimeo/psalm": "^5@dev"
+                "symfony/finder": ">=4.0",
+                "vimeo/psalm": "^5"
             },
             "suggest": {
                 "kint-php/kint-helpers": "Provides extra helper functions",
@@ -67,9 +67,9 @@
             ],
             "support": {
                 "issues": "https://github.com/kint-php/kint/issues",
-                "source": "https://github.com/kint-php/kint/tree/5.0.7"
+                "source": "https://github.com/kint-php/kint/tree/5.1.0"
             },
-            "time": "2023-06-26T19:25:00+00:00"
+            "time": "2023-11-16T06:04:49+00:00"
         },
         {
             "name": "matthiasmullie/minify",
@@ -194,54 +194,6 @@
                 "source": "https://github.com/matthiasmullie/path-converter/tree/1.1.3"
             },
             "time": "2019-02-05T23:41:09+00:00"
-        },
-        {
-            "name": "midweste/simplelogger",
-            "version": "v2.0.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/midweste/simplelogger.git",
-                "reference": "ad49a2a082724880d7a7647c9faabf48ce680306"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/midweste/simplelogger/zipball/ad49a2a082724880d7a7647c9faabf48ce680306",
-                "reference": "ad49a2a082724880d7a7647c9faabf48ce680306",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4",
-                "psr/log": "^1.0.0"
-            },
-            "provide": {
-                "psr/log-implementation": "1.0.0"
-            },
-            "type": "package",
-            "autoload": {
-                "psr-4": {
-                    "Midweste\\SimpleLogger\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "midweste"
-                }
-            ],
-            "description": "SimpleLogger is a collection of very simple loggers implementing \\Psr\\Log\\LoggerInterface (PSR-3)",
-            "homepage": "http://github.com/midwest/simplelogger",
-            "keywords": [
-                "log",
-                "logger",
-                "psr-3"
-            ],
-            "support": {
-                "source": "https://github.com/midweste/simplelogger/tree/v2.0.1"
-            },
-            "time": "2020-12-17T18:56:08+00:00"
         },
         {
             "name": "psr/log",
@@ -459,27 +411,111 @@
             "time": "2023-07-28T09:04:16+00:00"
         },
         {
-            "name": "twig/twig",
-            "version": "v3.7.1",
+            "name": "symfony/polyfill-php80",
+            "version": "v1.28.0",
             "source": {
                 "type": "git",
-                "url": "https://github.com/twigphp/Twig.git",
-                "reference": "a0ce373a0ca3bf6c64b9e3e2124aca502ba39554"
+                "url": "https://github.com/symfony/polyfill-php80.git",
+                "reference": "6caa57379c4aec19c0a12a38b59b26487dcfe4b5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/twigphp/Twig/zipball/a0ce373a0ca3bf6c64b9e3e2124aca502ba39554",
-                "reference": "a0ce373a0ca3bf6c64b9e3e2124aca502ba39554",
+                "url": "https://api.github.com/repos/symfony/polyfill-php80/zipball/6caa57379c4aec19c0a12a38b59b26487dcfe4b5",
+                "reference": "6caa57379c4aec19c0a12a38b59b26487dcfe4b5",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.1"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "1.28-dev"
+                },
+                "thanks": {
+                    "name": "symfony/polyfill",
+                    "url": "https://github.com/symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php80\\": ""
+                },
+                "classmap": [
+                    "Resources/stubs"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ion Bazan",
+                    "email": "ion.bazan@gmail.com"
+                },
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 8.0+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php80/tree/v1.28.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2023-01-26T09:26:14+00:00"
+        },
+        {
+            "name": "twig/twig",
+            "version": "v3.8.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/twigphp/Twig.git",
+                "reference": "9d15f0ac07f44dc4217883ec6ae02fd555c6f71d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/twigphp/Twig/zipball/9d15f0ac07f44dc4217883ec6ae02fd555c6f71d",
+                "reference": "9d15f0ac07f44dc4217883ec6ae02fd555c6f71d",
                 "shasum": ""
             },
             "require": {
                 "php": ">=7.2.5",
                 "symfony/polyfill-ctype": "^1.8",
-                "symfony/polyfill-mbstring": "^1.3"
+                "symfony/polyfill-mbstring": "^1.3",
+                "symfony/polyfill-php80": "^1.22"
             },
             "require-dev": {
                 "psr/container": "^1.0|^2.0",
-                "symfony/phpunit-bridge": "^5.4.9|^6.3"
+                "symfony/phpunit-bridge": "^5.4.9|^6.3|^7.0"
             },
             "type": "library",
             "autoload": {
@@ -515,7 +551,7 @@
             ],
             "support": {
                 "issues": "https://github.com/twigphp/Twig/issues",
-                "source": "https://github.com/twigphp/Twig/tree/v3.7.1"
+                "source": "https://github.com/twigphp/Twig/tree/v3.8.0"
             },
             "funding": [
                 {
@@ -527,22 +563,22 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-08-28T11:09:02+00:00"
+            "time": "2023-11-21T18:54:41+00:00"
         }
     ],
     "packages-dev": [
         {
             "name": "antecedent/patchwork",
-            "version": "2.1.26",
+            "version": "2.1.27",
             "source": {
                 "type": "git",
                 "url": "https://github.com/antecedent/patchwork.git",
-                "reference": "f2dae0851b2eae4c51969af740fdd0356d7f8f55"
+                "reference": "16a1ab81559aabf14acb616141e801b32777f085"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/antecedent/patchwork/zipball/f2dae0851b2eae4c51969af740fdd0356d7f8f55",
-                "reference": "f2dae0851b2eae4c51969af740fdd0356d7f8f55",
+                "url": "https://api.github.com/repos/antecedent/patchwork/zipball/16a1ab81559aabf14acb616141e801b32777f085",
+                "reference": "16a1ab81559aabf14acb616141e801b32777f085",
                 "shasum": ""
             },
             "require": {
@@ -563,7 +599,7 @@
                 }
             ],
             "description": "Method redefinition (monkey-patching) functionality for PHP.",
-            "homepage": "http://patchwork2.org/",
+            "homepage": "https://antecedent.github.io/patchwork/",
             "keywords": [
                 "aop",
                 "aspect",
@@ -575,9 +611,9 @@
             ],
             "support": {
                 "issues": "https://github.com/antecedent/patchwork/issues",
-                "source": "https://github.com/antecedent/patchwork/tree/2.1.26"
+                "source": "https://github.com/antecedent/patchwork/tree/2.1.27"
             },
-            "time": "2023-09-18T08:18:37+00:00"
+            "time": "2023-12-03T18:46:49+00:00"
         },
         {
             "name": "brain/monkey",
