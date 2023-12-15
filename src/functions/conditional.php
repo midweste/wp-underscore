@@ -26,6 +26,9 @@ function is_post_new(): bool
 {
     $uri = $_SERVER['REQUEST_URI'];
     $parsed = parse_url($uri);
+    if (!isset($parsed['path'])) {
+        return false;
+    }
     $path = pathinfo($parsed['path']);
     $page = $path['basename'];
     $is_new = ($page === 'post-new.php');
