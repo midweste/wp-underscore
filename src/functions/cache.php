@@ -122,7 +122,13 @@ function cache_memcached_delete_keys(array $keyPatterns): bool
         return false;
     }
 
-    $cachedKeys = cache_memcached_get_all_keys();
+    // get default server
+    $server = cache_memcached_default_server();
+    if (empty($server)) {
+        return false;
+    }
+
+    $cachedKeys = cache_memcached_get_all_keys($server['host'], $server['port']);
     if (empty($cachedKeys) || !is_array($cachedKeys)) {
         return false;
     }
@@ -176,6 +182,44 @@ function cache_redis_delete_keys(string $group): ?bool
     return call_user_func_array(array(&$redis, 'del'), $matches);
 }
 
+function cache_memcached_servers(): array
+{
+    global $wp_object_cache;
+    if (!isset($wp_object_cache->mc) || !is_array($wp_object_cache->mc)) {
+        return [];
+    }
+
+    $servers = [];
+    foreach ($wp_object_cache->mc as $group => $memcached) {
+        if (!$memcached instanceof \Memcached) {
+            continue;
+        }
+        $list = $memcached->getServerList();
+        foreach ($list as $server) {
+            $host = $server['host'];
+            $type = (isset($server['type']) && $server['type'] === 'SOCKET') || (strpos($host, '/') === 0) ? 'SOCKET' : 'TCP';
+            $port = ($type === 'SOCKET') ? 0 : $server['port'];
+            $servers[$group] = ['host' => $host, 'port' => $port];
+        }
+    }
+    return $servers;
+}
+
+function cache_memcached_default_server(): array
+{
+    $servers = cache_memcached_servers();
+    if (empty($servers)) {
+        return [];
+    }
+    if (isset($servers['default'])) {
+        return $servers['default'];
+    }
+    if (count($servers) === 1) {
+        return reset($servers);
+    }
+    return [];
+}
+
 function cache_memcached_get_all_keys(string $host = '127.0.0.1', int $port = 11211)
 {
     static $allKeys;
@@ -183,8 +227,13 @@ function cache_memcached_get_all_keys(string $host = '127.0.0.1', int $port = 11
         return $allKeys;
     }
 
-    // https://www.php.net/manual/en/memcached.getallkeys.php
-    $sock = fsockopen($host, $port, $errno, $errstr, 3);
+    $address = $host . ':' . $port;
+    if ($host[0] === '/') {
+        // Unix socket
+        $address = 'unix://' . $host;
+    }
+
+    $sock = stream_socket_client($address, $errno, $errstr, 3);
     if ($sock === false) {
         throw new \Exception("Error connection to server {$host} on port {$port}: ({$errno}) {$errstr}");
     }
