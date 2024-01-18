@@ -55,62 +55,32 @@ function is_post_edit_or_new_type(string $post_type): bool
 
 function conditional_types(): array
 {
-    // https://codex.wordpress.org/Conditional_Tags
-    // https://docs.woocommerce.com/document/conditional-tags/
-    $conditionals = [
-        // wp
-        'is_admin',
-        'is_front_page',
-        'is_page',
-        'is_single',
-        'is_category',
-        'is_tag',
-        'is_tax',
-        'is_post_type_archive',
-        'is_author',
-        'is_archive',
-        'is_search',
-        'is_404',
-        'is_paged',
-        'is_attachment',
-        'is_singular',
-        'is_main_query',
-        'is_page_template',
-        'wp_doing_ajax',
-        // woo
-        'is_woocommerce',
-        'is_shop',
-        'is_product_category',
-        'is_product_tag',
-        'is_product',
-        'is_cart',
-        'is_checkout',
-        'is_account_page',
-        'is_rest_request',
-        // custom
-        '_\user_is_admin',
-    ];
-    $conditionals = apply_filters('_conditional_types', $conditionals);
-
     $excluded = [
         'is_ajax', //deprecated
-        // 'is_blog_installed',
-        'is_comments_popup',
+        'is_blog_user', //deprecated
+        'is_comments_popup', //deprecated
+        'is_plugin_page', // deprecated
         // 'is_header_video_active',
         // 'is_favicon',
         // 'is_lighttpd_before_150',
-        'is_plugin_page',
     ];
     $excluded = apply_filters('_conditional_types_excluded', $excluded);
 
     $functions = get_defined_functions(true)['user'];
-    //$conditionals = [];
+    $conditionals = [];
     foreach ($functions as $function) {
-        if (strpos($function, 'is_') !== 0 || in_array($function, $excluded) || in_array($function, $conditionals)) {
+        if (strpos($function, 'is_') !== 0 || in_array($function, $excluded)) {
             continue;
         }
         $reflection = new \ReflectionFunction($function);
 
+        // no params
+        if ($reflection->getNumberOfParameters() === 0) {
+            $conditionals[] = $function;
+            continue;
+        }
+
+        // params with default values
         $params        = $reflection->getParameters();
         $defaultParams = true;
         foreach ($params as $param) {
@@ -119,12 +89,22 @@ function conditional_types(): array
                 break;
             }
         }
-        if (!$defaultParams || $reflection->getNumberOfParameters() !== 0) {
-            continue;
+        if ($defaultParams) {
+            $conditionals[] = $function;
         }
-
-        $conditionals[] = $function;
     }
+
+    // add in extras
+    $conditionals = array_merge(
+        $conditionals,
+        [
+            'wp_doing_ajax',
+            'is_rest_request',
+            'is_product_attribute_taxonomy',
+            'is_product_download',
+            '_\user_is_admin',
+        ]
+    );
     sort($conditionals);
 
     $types = [];
@@ -133,7 +113,6 @@ function conditional_types(): array
             $types[] = $conditional;
         }
     }
-
     return $types;
 }
 
