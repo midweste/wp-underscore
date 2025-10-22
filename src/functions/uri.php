@@ -232,7 +232,7 @@ function uri_server_relative(string $uri, string $host = ''): string
 
 function uri_to_path(string $url): string
 {
-    $relative = str_replace(WP_HOME . '/', '', $url);
+    $relative = str_replace(home_url() . '/', '', $url);
     return ABSPATH . $relative;
 }
 
@@ -243,8 +243,8 @@ function is_uri(string $uri): bool
 
 function uri_to_absolute(string $uri): string
 {
-    $replaced = str_replace(WP_HOME, '', $uri);
-    return (strpos($replaced, '/') === 0) ? WP_HOME . $replaced : WP_HOME . '/' . $replaced;
+    $replaced = str_replace(home_url(), '', $uri);
+    return (strpos($replaced, '/') === 0) ? home_url() . $replaced : home_url() . '/' . $replaced;
 }
 
 function uri_is_absolute(string $uri): string
