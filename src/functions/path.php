@@ -10,7 +10,8 @@ function path_from_root(string $path): string
 
 function path_to_uri(string $path): string
 {
-	return WP_HOME . path_relative( $path );
+    return home_url() . path_relative($path);
+    // return WP_HOME . path_relative( $path );
 }
 
 function path_relative(string $path): string
